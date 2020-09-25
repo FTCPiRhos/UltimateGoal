@@ -29,7 +29,7 @@ public class MyFIRSTJavaOpMode extends LinearOpMode {
         waitForStart();
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            telemetry.addData("Status", "Running");
+            telemetry.addData("Status", "Running..");
             telemetry.update();
         }
     }
