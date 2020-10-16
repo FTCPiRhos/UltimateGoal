@@ -57,6 +57,7 @@ public class StarterStackDeterminationExample extends LinearOpMode
         {
             telemetry.addData("Analysis", pipeline.getAnalysis());
             telemetry.addData( "Position", pipeline.position);
+            telemetry.addData( "AVG1=", pipeline.avg1);
             telemetry.update();
 
             // Don't burn CPU cycles busy-looping in this sample
@@ -86,8 +87,8 @@ public class StarterStackDeterminationExample extends LinearOpMode
          * The core values which define the location and size of the sample regions
          */
         static final Point REGION1_TOPLEFT_ANCHOR_POINT = new Point(181,98);
-        static final int REGION_WIDTH = 30;
-        static final int REGION_HEIGHT = 25;
+        static final int REGION_WIDTH = 50;
+        static final int REGION_HEIGHT = 30;
 
         final int FOUR_RING_THRESHOLD = 150;
         final int ONE_RING_THRESHOLD = 135;
