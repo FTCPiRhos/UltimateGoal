@@ -61,6 +61,8 @@ public class StarterStackDeterminationExample extends LinearOpMode
 
             // Don't burn CPU cycles busy-looping in this sample
             sleep(50);
+
+
         }
     }
 
@@ -88,7 +90,7 @@ public class StarterStackDeterminationExample extends LinearOpMode
         static final Point REGION1_TOPLEFT_ANCHOR_POINT = new Point(181,98);
         static final int REGION_WIDTH = 30;
         static final int REGION_HEIGHT = 25;
-
+        // this is thresholds for return values
         final int FOUR_RING_THRESHOLD = 150;
         final int ONE_RING_THRESHOLD = 135;
 

@@ -27,11 +27,11 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
     /* Declare OpMode members. */
 //    HardwarePushbot         robot   = new HardwarePushbot();   // Use a Pushbot's hardware
-    protected DcMotor frontLeft, frontRight, backLeft, backRight;
+    protected DcMotor frontLeft, frontRight, backLeft, backRight, FW;
 
     protected ElapsedTime runtime = new ElapsedTime();
 
-    static final double COUNTS_PER_MOTOR_REV = 1440 / 2;    // eg: TETRIX Motor Encoder
+    static final double COUNTS_PER_MOTOR_REV = 537.6;    // eg: TETRIX Motor Encoder
     static final double DRIVE_GEAR_REDUCTION = 2.0 / 3;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 3.937;   // For figuring circumference - 100mm
     static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
@@ -138,9 +138,13 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        frontLeft.setTargetPosition(leftPos);
+        int leftTargetCount = (int)(COUNTS_PER_INCH * leftPos);
+        int rightTargetCount = (int)(COUNTS_PER_INCH * rightPos);
+
+
+        frontLeft.setTargetPosition(leftTargetCount);
         frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        frontRight.setTargetPosition(rightPos);
+        frontRight.setTargetPosition(rightTargetCount);
         frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         frontLeft.setPower(speed);

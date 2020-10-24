@@ -50,7 +50,7 @@ import com.qualcomm.robotcore.util.Range;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Basic: Linear OpMode", group="Linear Opmode")
+@TeleOp(name="Prototype Test", group="Linear Opmode")
 //@Disabled
 public class prototypeTest extends LinearOpMode {
 
@@ -107,5 +107,8 @@ public class prototypeTest extends LinearOpMode {
             telemetry.addData("Motors", "shooter (%.2f)", ShooterPower);
             telemetry.update();
         }
+    }
+    public void getRPM(){
+
     }
 }
