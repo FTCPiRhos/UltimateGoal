@@ -22,7 +22,7 @@ public class PIDTest extends UltimateGoalAutonomousBase {
 
         double deltaFW = FW.getCurrentPosition() - startFWCount;
 
-        double RPM = (deltaFW * 240)/1;
+        double RPM = (deltaFW * 240)/537.6;
 
         return RPM;
 
@@ -32,12 +32,12 @@ public class PIDTest extends UltimateGoalAutonomousBase {
         double kp = 0.1;
         double ki = 0.1;
         double kd = 0.1;
-        double targetRPM = 0;
+        double targetRPM = 6000;
         double error = getRPM() - targetRPM;
         double lastError = 0;
         double integral = 0;
         ElapsedTime timer = new ElapsedTime();
-        while (Math.abs(error) <=10){
+        while (Math.abs(error) >=10){
 
 
             error = getRPM() - targetRPM;
@@ -65,4 +65,25 @@ public class PIDTest extends UltimateGoalAutonomousBase {
             telemetry.addData("Status", "Encoder Change: " + deltaPos);
             telemetry.update();
         }
+    public void MoveFwdPID (double targetInches) {
+        double kp = 0.1;
+        double ki = 0.1;
+        double kd = 0.1;
+        double targetDistance = targetInches * COUNTS_PER_INCH;
+        double errorFL = frontLeft.getCurrentPosition() - targetDistance;
+        double lastErrorFL = 0;
+        double integral = 0;
+        ElapsedTime timer = new ElapsedTime();
+        while (Math.abs(errorFL) >=100) {
+
+            errorFL = frontLeft.getCurrentPosition() - targetDistance;
+            double deltaError = lastErrorFL - errorFL;
+            integral += deltaError * timer.time();
+            double derivative = deltaError / timer.time();
+            frontLeft.setPower(kp * errorFL + ki * integral + kd * derivative);
+            errorFL = lastErrorFL;
+            timer.reset();
+        }
+    }
+
 }
