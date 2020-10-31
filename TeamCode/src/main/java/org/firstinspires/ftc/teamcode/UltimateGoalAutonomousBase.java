@@ -53,25 +53,25 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
 
     // Vuforia and Tensorflow related initialization
-    private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
+    /*private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
     protected static final String LABEL_FIRST_ELEMENT = "Quad";
     protected static final String LABEL_SECOND_ELEMENT = "Single";
     protected static final String LABEL_NONE_ELEMENT = "None";
 
     private static final String VUFORIA_KEY =
             "AdK8eN7/////AAABmW0I+yjROEzugc7U5K8Gc50Zsbe0yWcOgrl6WKqYU/Fonb8sBLtyq4sTsoBNG9FeQqCrpmDZnDIXbsXXTUAxWGAfB4nRg+5+qjg8K+zwZGJWgEFxUonjXaeC6dCfnoQ9ZcCi6im+BkmEw5g3uXVdYr8J+6ygmRLd5LGIq4p3huYdrq3JQWNu43Vuwz5Bb9is861q7XQ224ZXvpMzHdU3CcvLo8imHVbFPUOVaV6cquuEyqcFArHhNUWn4m3IrrDaLRzCkD3dK5fT1+WF43BTq2C8NmtGYDC6v8p3e7+NTPUKzxhJiTZk7yxNAYiNd8U+vMdKi1Dxe3OFCKTRT+xiLjW6arbQnj+vmIZlZwfcIZ7o";
-
+    */
     /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
      */
-    protected VuforiaLocalizer vuforia;
+    //protected VuforiaLocalizer vuforia;
 
     /**
      * {@link #tfod} is the variable we will use to store our instance of the TensorFlow Object
      * Detection engine.
      */
-    protected TFObjectDetector tfod;
+    //protected TFObjectDetector tfod;
 
     //OpenCV related initalization
     OpenCvInternalCamera phoneCam;
@@ -81,12 +81,12 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
         // Vuforia and Tensorflow related initialization
         // The TFObjectDetector uses the camera frames from the VuforiaLocalizer, so we create that
         // first.
-        initVuforia();
-        initTfod();
+        //initVuforia();
+        //initTfod();
 
-        if (tfod != null) {
-            tfod.activate();
-        }
+        //if (tfod != null) {
+       //     tfod.activate();
+        //}
 
         /*
          * Initialize the drive system variables.
@@ -166,7 +166,7 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
     }
 
-    protected void moveFwdAndBack(double speed, int leftPos, int rightPos, int timeouts) {
+    protected void moveFwdAndBack(double speed, int leftPos, int rightPos) {
 
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -189,13 +189,13 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
         ElapsedTime runtime = new ElapsedTime();
 
-        while (opModeIsActive() && (frontLeft.isBusy() && frontRight.isBusy()) && runtime.seconds() < timeouts) {
+        while (opModeIsActive() && (frontLeft.isBusy() && frontRight.isBusy())) {
 
             // Display it for the driver.
-            telemetry.addData("LF", frontLeft.getPower());
-            telemetry.addData("RF", frontRight.getPower());
-            telemetry.addData("LB", backLeft.getPower());
-            telemetry.addData("RB", backRight.getPower());
+            telemetry.addData("LF", frontLeft.getCurrentPosition());
+            telemetry.addData("RF", frontRight.getCurrentPosition());
+            telemetry.addData("LB", backLeft.getCurrentPosition());
+            telemetry.addData("RB", backRight.getCurrentPosition());
             telemetry.addData("Speed: ", speed);
             telemetry.update();
         }
@@ -227,13 +227,13 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
         while (opModeIsActive() && runtime.milliseconds() < milliseconds) {
             // Display it for the driver.
-            telemetry.addData("LF", frontLeft.getCurrentPosition());
-            telemetry.addData("RF", frontRight.getCurrentPosition());
-            telemetry.addData("LB", backLeft.getCurrentPosition());
-            telemetry.addData("RB", backRight.getCurrentPosition());
-            telemetry.addData("Speed", speed);
-            telemetry.addData("Second", milliseconds);
-            telemetry.update();
+            //telemetry.addData("LF", frontLeft.getCurrentPosition());
+            //telemetry.addData("RF", frontRight.getCurrentPosition());
+            //telemetry.addData("LB", backLeft.getCurrentPosition());
+            //telemetry.addData("RB", backRight.getCurrentPosition());
+            //telemetry.addData("Speed", speed);
+            //telemetry.addData("Second", milliseconds);
+            //telemetry.update();
         }
 
         // Stop all motion;
@@ -266,11 +266,11 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
         while (opModeIsActive() && runtime.milliseconds() < milliseconds) {
             // Display it for the driver.
-            telemetry.addData("LF", frontLeft.getCurrentPosition());
-            telemetry.addData("RF", frontRight.getCurrentPosition());
-            telemetry.addData("LB", backLeft.getCurrentPosition());
-            telemetry.addData("RB", backRight.getCurrentPosition());
-            telemetry.update();
+            //telemetry.addData("LF", frontLeft.getCurrentPosition());
+            //telemetry.addData("RF", frontRight.getCurrentPosition());
+            //telemetry.addData("LB", backLeft.getCurrentPosition());
+            //telemetry.addData("RB", backRight.getCurrentPosition());
+            //telemetry.update();
         }
 
         // Stop all motion;
@@ -375,7 +375,7 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
     }
 
-    protected String TFRecognizeStack(double milliseconds) {
+    /*protected String TFRecognizeStack(double milliseconds) {
         ElapsedTime runtime = new ElapsedTime();
         String stackHeight = LABEL_NONE_ELEMENT;
         while (opModeIsActive() && runtime.milliseconds() < milliseconds) {
@@ -405,7 +405,7 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
         }
         return stackHeight;
-    }
+    }*/
 
     protected StarterStackDeterminationPipeline.RingPosition OpenCVRecognizeStack(double milliseconds) {
         ElapsedTime runtime = new ElapsedTime();
@@ -431,32 +431,32 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
     /**
      * Initialize the Vuforia localization engine.
      */
-    private void initVuforia() {
+   // private void initVuforia() {
         /*
          * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
          */
-        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+       // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
-        parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
+       // parameters.vuforiaLicenseKey = VUFORIA_KEY;
+       // parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
 
         //  Instantiate the Vuforia engine
-        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+        //vuforia = ClassFactory.getInstance().createVuforia(parameters);
 
         // Loading trackables is not necessary for the TensorFlow Object Detection engine.
-    }
+    //}
 
     /**
      * Initialize the TensorFlow Object Detection engine.
      */
-    private void initTfod() {
+    /*private void initTfod() {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
         tfodParameters.minResultConfidence = 0.8f;
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
-    }
+    }*/
 
     public static class StarterStackDeterminationPipeline extends OpenCvPipeline
     {
@@ -479,7 +479,7 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
         /*
          * The core values which define the location and size of the sample regions
          */
-        static final Point REGION1_TOPLEFT_ANCHOR_POINT = new Point(181,98);
+        static final Point REGION1_TOPLEFT_ANCHOR_POINT = new Point(200,50);
         static final int REGION_WIDTH = 30;
         static final int REGION_HEIGHT = 25;
 
