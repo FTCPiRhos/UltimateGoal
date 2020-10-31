@@ -35,7 +35,7 @@ public class NavigationTest extends UltimateGoalAutonomousBase {
     // NOTE: If you are running on a CONTROL HUB, with only one USB WebCam, you must select CAMERA_CHOICE = BACK; and PHONE_IS_PORTRAIT = false;
     //
     private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
-    private static final boolean PHONE_IS_PORTRAIT = false  ;
+    private static final boolean PHONE_IS_PORTRAIT = true  ;
 
     /*
      * IMPORTANT: You need to obtain your own license key to use Vuforia. The string below with which
@@ -174,7 +174,7 @@ public class NavigationTest extends UltimateGoalAutonomousBase {
 
         // Next, translate the camera lens to where it is on the robot.
         // In this example, it is centered (left to right), but forward of the middle of the robot, and above ground level.
-        final float CAMERA_FORWARD_DISPLACEMENT  = 4.0f * mmPerInch;   // eg: Camera is 4 Inches in front of robot center
+        final float CAMERA_FORWARD_DISPLACEMENT  = 8.0f * mmPerInch;   // eg: Camera is 4 Inches in front of robot center
         final float CAMERA_VERTICAL_DISPLACEMENT = 12.0f * mmPerInch;   // eg: Camera is 8 Inches above ground
         final float CAMERA_LEFT_DISPLACEMENT     = -8.0f * mmPerInch;     // eg: Camera is ON the robot's center line
 

@@ -1,16 +1,23 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.graphics.Point;
 import android.util.Log;
 
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.RotatedRect;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.core.Point;
+import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class PiRhosOpenCVPipeline extends OpenCvPipeline {
-    {
         public Point targetLocation = new Point();
         public double contourArea = 0;
         /*
@@ -71,27 +78,26 @@ public abstract class PiRhosOpenCVPipeline extends OpenCvPipeline {
             return mask;
         }
         public Mat threshold(Mat input, Scalar low, Scalar high){
-        Mat newMat = new Mat(input.size(), CvType.CV_8U);
-        Mat hsv = new Mat(input.size(), CvType.CV_32F);
-        Imgproc.cvtColor(input, hsv, Imgproc.COLOR_RGB2HSV);
-        Core.inRange(hsv, low, high, newMat);
-        return newMat;
-    }
+            Mat newMat = new Mat(input.size(), CvType.CV_8U);
+            Mat hsv = new Mat(input.size(), CvType.CV_32F);
+            Imgproc.cvtColor(input, hsv, Imgproc.COLOR_RGB2HSV);
+            Core.inRange(hsv, low, high, newMat);
+            return newMat;
+        }
+
         public List<MatOfPoint> getContours(Mat mask){
-        List<MatOfPoint> contours = new ArrayList<>();
-        Mat hierarchy = new Mat();
-        Imgproc.findContours(mask, contours, hierarchy, Imgproc.CHAIN_APPROX_SIMPLE, Imgproc.RETR_TREE);
-        return contours;
-    }
+                List<MatOfPoint> contours = new ArrayList<>();
+                Mat hierarchy = new Mat();
+                Imgproc.findContours(mask, contours, hierarchy, Imgproc.CHAIN_APPROX_SIMPLE, Imgproc.RETR_TREE);
+                return contours;
+        }
 
         public Point getTargetLocation(){
-        return targetLocation;
-    }
+            return targetLocation;
+        }
 
         public double getContourArea(){
-        return contourArea;
-    }
-    }
-
+            return contourArea;
+        }
 
 }
