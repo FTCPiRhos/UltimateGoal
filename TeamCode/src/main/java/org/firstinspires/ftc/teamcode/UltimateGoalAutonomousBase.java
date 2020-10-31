@@ -68,14 +68,14 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
     //protected VuforiaLocalizer vuforia;
 
     /**
-     * {@link #tfod} is the variable we will use to store our instance of the TensorFlow Object
+     *  is the variable we will use to store our instance of the TensorFlow Object
      * Detection engine.
      */
     //protected TFObjectDetector tfod;
 
-    //OpenCV related initalization
+    //OpenCV related initalization..
 //    OpenCvInternalCamera phoneCam;
-    OpenCvCamera webcam;
+//    OpenCvCamera webcam;
     StarterStackDeterminationPipeline pipeline;
 
     protected void initHardware() {
@@ -116,12 +116,13 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 //        phoneCam.setPipeline(pipeline);
 //        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
 //        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"));
-        webcam.setPipeline(pipeline);
+//        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"));
+//        webcam.setPipeline(pipeline);
 
         // We set the viewport policy to optimized view so the preview doesn't appear 90 deg
         // out when the RC activity is in portrait. We do our actual image processing assuming
         // landscape orientation, though.
+/*
         webcam.setViewportRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW);
 
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
@@ -132,7 +133,7 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
                 webcam.startStreaming(320,240, OpenCvCameraRotation.SIDEWAYS_LEFT);
             }
         });
-
+*/
         telemetry.addData("Status", "Initialization Done");
         telemetry.update();
     }
@@ -270,6 +271,7 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
         ElapsedTime runtime = new ElapsedTime();
 
+
         while (opModeIsActive() && runtime.milliseconds() < milliseconds) {
             // Display it for the driver.
             //telemetry.addData("LF", frontLeft.getCurrentPosition());
@@ -333,6 +335,143 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
         backRight.setPower(0);
 
     }
+
+
+    protected void moveForwardandBackwardEncoders( double speed,
+                                                   double distance ,double timeoutInMilliseconds){
+        int newBackLeftTarget;
+        int newFrontLeftTarget;
+        int newFrontRightTarget;
+        int newBackRightTarget;
+
+        // Ensure that the opmode is still active
+        if (opModeIsActive()) {
+
+            // Determine new target position, and pass to motor controller
+            newFrontLeftTarget = frontLeft.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
+            newFrontRightTarget = frontRight.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
+            newBackRightTarget = backRight.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
+            newBackLeftTarget = backLeft.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
+            frontLeft.setTargetPosition(newFrontLeftTarget);
+            frontRight.setTargetPosition(newFrontRightTarget);
+            backRight.setTargetPosition(newBackRightTarget);
+            backLeft.setTargetPosition(newBackLeftTarget);
+
+            // Turn On RUN_TO_POSITION
+            frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            // reset the timeout time and start motion.
+            runtime.reset();
+            frontLeft.setPower(speed);
+            frontRight.setPower(speed);
+            backRight.setPower(speed);
+            backLeft.setPower(speed);
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+            // its target position, the motion will stop.  This is "safer" in the event that the robot will
+            // always end the motion as soon as possible.
+            // However, if you require that BOTH motors have finished their moves before the robot continues
+            // onto the next step, use (isBusy() || isBusy()) in the loop test.
+            while (opModeIsActive() && (runtime.milliseconds() < timeoutInMilliseconds) &&
+                    (frontRight.isBusy() && frontLeft.isBusy() && backRight.isBusy() && backLeft.isBusy())) {
+
+                // Display it for the driver.
+                telemetry.addData("Path1",  "Running to %7d :%7d", newFrontLeftTarget,  newFrontRightTarget, newBackLeftTarget, newBackRightTarget);
+                telemetry.addData("Path2",  "Running at %7d :%7d", frontLeft.getCurrentPosition(), frontRight.getCurrentPosition(),backLeft.getCurrentPosition(),
+                        backRight.getCurrentPosition());
+
+                telemetry.update();
+            }
+
+            // Stop all motion;
+            frontLeft.setPower(0);
+            frontRight.setPower(0);
+            backLeft.setPower(0);
+            backRight.setPower(0);
+
+            // Turn off RUN_TO_POSITION
+            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            //  sleep(250);   // optional pause after each move
+        }
+
+    }
+
+    protected void moveSideWaysEncoders( double speed, double distance ,double timeoutInMilliseconds){
+        speed = -speed;
+        int newBackLeftTarget;
+        int newFrontLeftTarget;
+        int newFrontRightTarget;
+        int newBackRightTarget;
+
+        // Ensure that the opmode is still active
+        if (opModeIsActive()) {
+
+            // Determine new target position, and pass to motor controller
+            newFrontLeftTarget = frontLeft.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
+            newFrontRightTarget = frontRight.getCurrentPosition() - (int)(distance * COUNTS_PER_INCH);
+            newBackRightTarget = backRight.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
+            newBackLeftTarget = backLeft.getCurrentPosition() - (int)(distance * COUNTS_PER_INCH);
+            frontLeft.setTargetPosition(newFrontLeftTarget);
+            frontRight.setTargetPosition(newFrontRightTarget);
+            backRight.setTargetPosition(newBackRightTarget);
+            backLeft.setTargetPosition(newBackLeftTarget);
+
+            // Turn On RUN_TO_POSITION
+            frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            // reset the timeout time and start motion.
+            runtime.reset();
+            frontLeft.setPower(speed);
+            frontRight.setPower(-speed);
+            backLeft.setPower(-speed);
+            backRight.setPower(speed);
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+            // its target position, the motion will stop.  This is "safer" in the event that the robot will
+            // always end the motion as soon as possible.
+            // However, if you require that BOTH motors have finished their moves before the robot continues
+            // onto the next step, use (isBusy() || isBusy()) in the loop test.
+            while (opModeIsActive() && (runtime.milliseconds() < timeoutInMilliseconds) &&
+                    (frontRight.isBusy() && frontLeft.isBusy() && backRight.isBusy() && backLeft.isBusy())) {
+
+                // Display it for the driver.
+                telemetry.addData("Path1",  "Running to %7d :%7d", newFrontLeftTarget,  newFrontRightTarget, newBackLeftTarget, newBackRightTarget);
+                telemetry.addData("Path2",  "Running at %7d :%7d", frontLeft.getCurrentPosition(), frontRight.getCurrentPosition(),backLeft.getCurrentPosition(),
+                        backRight.getCurrentPosition());
+
+                telemetry.update();
+            }
+
+            // Stop all motion;
+            frontLeft.setPower(0);
+            frontRight.setPower(0);
+            backLeft.setPower(0);
+            backRight.setPower(0);
+
+            // Turn off RUN_TO_POSITION
+            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            //  sleep(250);   // optional pause after each move
+        }
+
+    }
+
+
 
     protected void moveSidewayForDistance(double speed, double inches, double timeoutInMilliseconds) {
         speed = -speed;
