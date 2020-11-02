@@ -24,6 +24,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfInt;
@@ -54,6 +55,7 @@ import java.util.List;
 public class OpenCV_Test extends LinearOpMode
 {
     OpenCvInternalCamera2 phoneCam;
+    OpenCvCamera webcam;
     StoneOrientationAnalysisPipeline pipeline;
 
     @Override
@@ -67,19 +69,22 @@ public class OpenCV_Test extends LinearOpMode
          */
 
         // Create camera instance
+//        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+//        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera2(OpenCvInternalCamera2.CameraDirection.BACK, cameraMonitorViewId);
+        webcam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
 
         // Open async and start streaming inside opened callback
-        phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
             public void onOpened()
             {
-                phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+                webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
 
                 pipeline = new StoneOrientationAnalysisPipeline();
-                phoneCam.setPipeline(pipeline);
+                webcam.setPipeline(pipeline);
             }
         });
 
@@ -105,8 +110,8 @@ public class OpenCV_Test extends LinearOpMode
                 for(StoneOrientationAnalysisPipeline.AnalyzedStone stone : stones)
                 {
                     telemetry.addLine(String.format("Object: Angle=%.2f (%.2f,%.2f) (%.2f,%.2f)", stone.angle,
-//                                                                                                    stone.points[0].x, stone.points[0].y,
-                                                                                                    stone.points[1].x, stone.points[1].y,
+                                                                                                    stone.points[0].x, stone.points[0].y,
+//                                                                                                    stone.points[1].x, stone.points[1].y,
 //                                                                                                    stone.points[2].x, stone.points[2].y,
                                                                                                     stone.points[3].x, stone.points[3].y ));
                 }
@@ -156,6 +161,30 @@ public class OpenCV_Test extends LinearOpMode
             StoneOrientation orientation;
             double angle;
             Point[] points;
+
+            void setPoints( Point[] pointsToSet ) {
+                double high_x = 0.0;
+                double low_x = 9999.0;
+                double high_y = 0.0;
+                double low_y = 9999.0;
+
+                for ( int i = 0; i < 4; i++ ) {
+                    if ( pointsToSet[i].x > high_x )
+                        high_x = pointsToSet[i].x;
+                    if ( pointsToSet[i].x < low_x )
+                        low_x = pointsToSet[i].x;
+                    if ( pointsToSet[i].y > high_y )
+                        high_y = pointsToSet[i].y;
+                    if ( pointsToSet[i].y < low_y )
+                        low_y = pointsToSet[i].y;
+                }
+
+                points = new Point[4];
+                points[0] = new Point( low_x, low_y );
+                points[1] = new Point( high_x, low_y );
+                points[2] = new Point( low_x, high_y );
+                points[3] = new Point( high_x, high_y );
+            }
         }
 
         enum StoneOrientation
@@ -386,7 +415,7 @@ public class OpenCV_Test extends LinearOpMode
                 AnalyzedStone analyzedStone = new AnalyzedStone();
                 analyzedStone.angle = angle;
                 analyzedStone.orientation = StoneOrientation.NOT_UPRIGHT;
-                analyzedStone.points = stonePoints;
+                analyzedStone.setPoints(stonePoints);
                 internalStoneList.add(analyzedStone);
             }
             else if(belowMidlineMetrics.density < aboveMidlineMetrics.density - DENSITY_UPRIGHT_THRESHOLD)
@@ -420,7 +449,7 @@ public class OpenCV_Test extends LinearOpMode
                 AnalyzedStone analyzedStone = new AnalyzedStone();
                 analyzedStone.angle = angle;
                 analyzedStone.orientation = StoneOrientation.NOT_UPRIGHT;
-                analyzedStone.points = stonePoints;
+                analyzedStone.setPoints(stonePoints);
                 internalStoneList.add(analyzedStone);
             }
             else
@@ -434,7 +463,7 @@ public class OpenCV_Test extends LinearOpMode
                 AnalyzedStone analyzedStone = new AnalyzedStone();
                 analyzedStone.angle = rotRectAngle;
                 analyzedStone.orientation = StoneOrientation.UPRIGHT;
-                analyzedStone.points = stonePoints;
+                analyzedStone.setPoints(stonePoints);
                 internalStoneList.add(analyzedStone);
             }
         }
