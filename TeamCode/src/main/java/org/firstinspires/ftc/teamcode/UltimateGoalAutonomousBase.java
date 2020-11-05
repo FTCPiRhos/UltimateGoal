@@ -30,6 +30,7 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvInternalCamera;
 import org.openftc.easyopencv.OpenCvPipeline;
+import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.List;
 
@@ -76,7 +77,7 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
     //OpenCV related initalization
     OpenCvInternalCamera phoneCam;
     StarterStackDeterminationPipeline pipeline;
-
+    OpenCvCamera webcam;
     protected void initHardware() {
         // Vuforia and Tensorflow related initialization
         // The TFObjectDetector uses the camera frames from the VuforiaLocalizer, so we create that
@@ -110,8 +111,10 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
+        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"));
         pipeline = new StarterStackDeterminationPipeline();
         phoneCam.setPipeline(pipeline);
+        webcam.setPipeline(pipeline);
 
         // We set the viewport policy to optimized view so the preview doesn't appear 90 deg
         // out when the RC activity is in portrait. We do our actual image processing assuming
@@ -126,7 +129,14 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
                 phoneCam.startStreaming(320,240, OpenCvCameraRotation.SIDEWAYS_LEFT);
             }
         });
-
+        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                webcam.startStreaming(320,240, OpenCvCameraRotation.UPRIGHT);
+            }
+        });
         telemetry.addData("Status", "Initialization Done");
         telemetry.update();
     }
