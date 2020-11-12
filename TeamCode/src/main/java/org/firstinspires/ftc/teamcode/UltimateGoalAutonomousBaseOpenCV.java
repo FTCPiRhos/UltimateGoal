@@ -71,24 +71,24 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
 
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
-        pipeline = new StarterStackDeterminationPipeline();
-        phoneCam.setPipeline(pipeline);
+        //int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        //phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
+        //pipeline = new StarterStackDeterminationPipeline();
+        //phoneCam.setPipeline(pipeline);
 
         // We set the viewport policy to optimized view so the preview doesn't appear 90 deg
         // out when the RC activity is in portrait. We do our actual image processing assuming
         // landscape orientation, though.
-        phoneCam.setViewportRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW);
+        //phoneCam.setViewportRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW);
 
-        phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
-        {
-            @Override
-            public void onOpened()
-            {
-                phoneCam.startStreaming(320,240, OpenCvCameraRotation.SIDEWAYS_LEFT);
-            }
-        });
+        //phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        //{
+          //  @Override
+            //public void onOpened()
+            //{
+              //  phoneCam.startStreaming(320,240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+            //}
+        //});
 
         telemetry.addData("Status", "Initialization Done");
         telemetry.update();
@@ -186,13 +186,13 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         while (opModeIsActive() && runtime.milliseconds() < milliseconds) {
             // Display it for the driver.
-            telemetry.addData("LF", frontLeft.getCurrentPosition());
-            telemetry.addData("RF", frontRight.getCurrentPosition());
-            telemetry.addData("LB", backLeft.getCurrentPosition());
-            telemetry.addData("RB", backRight.getCurrentPosition());
-            telemetry.addData("Speed", speed);
-            telemetry.addData("Second", milliseconds);
-            telemetry.update();
+            //telemetry.addData("LF", frontLeft.getCurrentPosition());
+            //telemetry.addData("RF", frontRight.getCurrentPosition());
+            //telemetry.addData("LB", backLeft.getCurrentPosition());
+            //telemetry.addData("RB", backRight.getCurrentPosition());
+            //telemetry.addData("Speed", speed);
+            //telemetry.addData("Second", milliseconds);
+            //telemetry.update();
         }
 
         // Stop all motion;
@@ -225,11 +225,11 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         while (opModeIsActive() && runtime.milliseconds() < milliseconds) {
             // Display it for the driver.
-            telemetry.addData("LF", frontLeft.getCurrentPosition());
-            telemetry.addData("RF", frontRight.getCurrentPosition());
-            telemetry.addData("LB", backLeft.getCurrentPosition());
-            telemetry.addData("RB", backRight.getCurrentPosition());
-            telemetry.update();
+            //telemetry.addData("LF", frontLeft.getCurrentPosition());
+            //telemetry.addData("RF", frontRight.getCurrentPosition());
+            //telemetry.addData("LB", backLeft.getCurrentPosition());
+            //telemetry.addData("RB", backRight.getCurrentPosition());
+            //telemetry.update();
         }
 
         // Stop all motion;
