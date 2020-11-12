@@ -263,7 +263,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     }
 
     protected void rotate( double speed, int degree ) {
-     
+
     }
 
     // Shooting ring with flywheel
