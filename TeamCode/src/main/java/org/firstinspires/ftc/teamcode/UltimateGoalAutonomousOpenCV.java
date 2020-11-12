@@ -26,7 +26,7 @@ public class UltimateGoalAutonomousOpenCV extends UltimateGoalAutonomousBaseOpen
             moveSidewayForMilliseconds(-0.4, 1200);
             sleep(1000);
             moveFwdAndBackForMilliseconds(0.4, 500);
-            moveFwdAndBack(0.4, 1440, 1440);
+//            moveFwdAndBack(0.4, 1440, 1440);
         }
         else if(objectFound.equals(StarterStackDeterminationPipeline.RingPosition.ONE)) {
             moveFwdAndBackForMilliseconds(0.4, 2500);
