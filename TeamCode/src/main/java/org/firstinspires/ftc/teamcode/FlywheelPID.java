@@ -60,7 +60,8 @@ public class FlywheelPID extends LinearOpMode {
             if (gamepad1.right_bumper){
                 targetRPM += 2;
             }
-            backRightPower = SetRPM(targetRPM, backRightPower);
+            //backRightPower = SetRPM(targetRPM, backRightPower);
+            moveWPID(24,0);
         }
     }
 
@@ -81,32 +82,12 @@ public class FlywheelPID extends LinearOpMode {
 
     }
 
-    public void FWPID () {
-        double kp = 0.1;
-        double ki = 0.1;
-        double kd = 0.1;
-        double targetRPM = -150;
-        double error = getRPM() - targetRPM;
-        double lastError = 0;
-        double integral = 0;
-        ElapsedTime timer = new ElapsedTime();
-        while (Math.abs(error) >=10){
 
-
-            error = getRPM() - targetRPM;
-            double deltaError = lastError - error;
-            integral += error * timer.time();
-            double derivative = deltaError / timer.time();
-            backRight.setPower(kp * error - ki * integral - kd * derivative);
-            error = lastError;
-            timer.reset();
-        }
-    }
 
     public double SetRPM (double targetRPM, double motorPower){
         double kp = 0.0025;
         double ki = 0.000025 ;
-        double kd = 0.000025 * 0 ;
+        double kd = 0.000000025 * 0 ;
         double errorRPM = targetRPM + getRPM();
         double curPower = motorPower;
         double lastErr = 0 ;
@@ -135,6 +116,7 @@ public class FlywheelPID extends LinearOpMode {
             telemetry.addData("curPower  = ", curPower);
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
+
             if (Math.abs(targetRPM) > RPM){
                 return (curPower);
             }
@@ -142,46 +124,61 @@ public class FlywheelPID extends LinearOpMode {
         return (curPower);
     }
 
-    public void getEncoder(){
-        double firstPos = backRight.getCurrentPosition();
-        backRight.setPower(1);
-        ElapsedTime timer = new ElapsedTime();
-        while(timer.milliseconds()<1000)
-        {
-            sleep(100);
-        }
-        double newPos = backRight.getCurrentPosition();
-
-        double deltaPos = newPos - firstPos;
-
-        telemetry.addData("Status", "Encoder Change: " + deltaPos);
-        telemetry.update();
-    }
-    public void MoveFwdPID (double targetInches) {
-        double kp = 0.1;
-        double ki = 0.1;
-        double kd = 0.1;
-        double targetDistance = targetInches * COUNTS_PER_INCH;
-        double errorFL = frontLeft.getCurrentPosition() - targetDistance;
-        double errorFR = frontRight.getCurrentPosition() - targetDistance;
-        double errorBL = backLeft.getCurrentPosition() - targetDistance;
-        double errorBR = backRight.getCurrentPosition() - targetDistance;
-        double lastErrorFL = 0;
-        double lastErrorFR = 0;
-        double lastErrorBL = 0;
-        double lastErrorBR = 0;
+    public void moveWPID (double targetInches, double setPower){
+        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontRight.setMode((DcMotor.RunMode.STOP_AND_RESET_ENCODER));
+        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        double targetPos = targetInches * COUNTS_PER_INCH;
+        double kp = 0.0025;
+        double ki = 0.0025;
+        double kd = 0;
         double integral = 0;
+        double errorFrontLeft = targetPos;
+        double errorBackLeft = targetPos;
+        double errorFrontRight = targetPos;
+        double errorBackRight = targetPos;
+        double lastMinError = 0;
+        double curPower = setPower;
         ElapsedTime timer = new ElapsedTime();
-        while (Math.abs(errorFL) >=200 ||Math.abs(errorFR) >=200 || Math.abs(errorBL) >=200  ) {
+        // start loop while any error is > some number
+        // use the lowest change to not cause any slip with the wheels
+        while (Math.abs(errorFrontLeft) >= 500 || Math.abs(errorFrontRight) >= 500 || Math.abs(errorBackLeft) >= 500 || Math.abs(errorBackRight) >= 500 ){
+            double minError = Math.min(Math.abs(errorFrontLeft),Math.abs(errorFrontRight));
+            minError = Math.min(minError,Math.abs(errorBackLeft));
+            minError = Math.min(minError, Math.abs(errorBackRight));
 
-            errorFL = frontLeft.getCurrentPosition() - targetDistance;
-            double deltaError = lastErrorFL - errorFL;
-            integral += deltaError * timer.time();
-            double derivative = deltaError / timer.time();
-            frontLeft.setPower(kp * errorFL + ki * integral + kd * derivative);
-            errorFL = lastErrorFL;
+            double deltaMinError = minError - lastMinError;
+
+            integral += minError * timer.time();
+            double derivative = deltaMinError/timer.time();
+
             timer.reset();
+
+            double deltaPower = (minError * kp) + (integral * ki) + (derivative * kd);
+            curPower += deltaPower;
+
+            frontLeft.setPower(curPower);
+            frontRight.setPower(curPower);
+            backRight.setPower(curPower);
+            backLeft.setPower(curPower);
+
+            errorFrontLeft = targetPos - frontLeft.getCurrentPosition();
+            errorBackLeft = targetPos - backLeft.getCurrentPosition();
+            errorFrontRight = targetPos - frontRight.getCurrentPosition();
+            errorBackRight = targetPos - backRight.getCurrentPosition();
+
+            lastMinError = minError;
+
+
+
+
         }
+
+
+
+
+
     }
     protected void initHardware() {
         // Vuforia and Tensorflow related initialization
