@@ -22,9 +22,11 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
 import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
 
-@TeleOp(name="Navigaton Test", group ="PiRhos")
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+
+@Autonomous(name="Navigaton Test", group ="PiRhos")
 // @Disabled
-public class NavigationTest extends LinearOpMode {
+public class NavigationTest extends UltimateGoalAutonomousBase {
 
     // IMPORTANT:  For Phone Camera, set 1) the camera source and 2) the orientation, based on how your phone is mounted:
     // 1) Camera Source.  Valid choices are:  BACK (behind screen) or FRONT (selfie side)
@@ -33,7 +35,7 @@ public class NavigationTest extends LinearOpMode {
     // NOTE: If you are running on a CONTROL HUB, with only one USB WebCam, you must select CAMERA_CHOICE = BACK; and PHONE_IS_PORTRAIT = false;
     //
     private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
-    private static final boolean PHONE_IS_PORTRAIT = false  ;
+    private static final boolean PHONE_IS_PORTRAIT = true  ;
 
     /*
      * IMPORTANT: You need to obtain your own license key to use Vuforia. The string below with which
@@ -68,6 +70,7 @@ public class NavigationTest extends LinearOpMode {
     private float phoneZRotate    = 0;
 
     @Override public void runOpMode() {
+        initHardware();
         /*
          * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
          * We can pass Vuforia the handle to a camera preview resource (on the RC phone);
@@ -171,9 +174,9 @@ public class NavigationTest extends LinearOpMode {
 
         // Next, translate the camera lens to where it is on the robot.
         // In this example, it is centered (left to right), but forward of the middle of the robot, and above ground level.
-        final float CAMERA_FORWARD_DISPLACEMENT  = 4.0f * mmPerInch;   // eg: Camera is 4 Inches in front of robot center
+        final float CAMERA_FORWARD_DISPLACEMENT  = 8.0f * mmPerInch;   // eg: Camera is 4 Inches in front of robot center
         final float CAMERA_VERTICAL_DISPLACEMENT = 12.0f * mmPerInch;   // eg: Camera is 8 Inches above ground
-        final float CAMERA_LEFT_DISPLACEMENT     = -8.0f;     // eg: Camera is ON the robot's center line
+        final float CAMERA_LEFT_DISPLACEMENT     = -8.0f * mmPerInch;     // eg: Camera is ON the robot's center line
 
         OpenGLMatrix robotFromCamera = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
@@ -190,13 +193,23 @@ public class NavigationTest extends LinearOpMode {
         // CONSEQUENTLY do not put any driving commands in this loop.
         // To restore the normal opmode structure, just un-comment the following line:
 
-        // waitForStart();
+        waitForStart();
 
         // Note: To use the remote camera preview:
         // AFTER you hit Init on the Driver Station, use the "options menu" to select "Camera Stream"
         // Tap the preview window to receive a fresh image.
 
         targetsUltimateGoal.activate();
+
+        VectorF translation = null;
+        float x_pos = 0.0f;
+        float y_pos = 0.0f;
+        float x_target = 0.0f;
+        float y_target = 44.0f;
+        float x_difference;
+        float y_difference;
+        boolean pos_x_correct = false;
+
         while (!isStopRequested()) {
 
             // check all the trackable targets to see which one (if any) is visible.
@@ -219,18 +232,52 @@ public class NavigationTest extends LinearOpMode {
             // Provide feedback as to where the robot is located (if we know).
             if (targetVisible) {
                 // express position (translation) of robot in inches.
-                VectorF translation = lastLocation.getTranslation();
+                translation = lastLocation.getTranslation();
+                x_pos = translation.get(0) / mmPerInch;
+                y_pos = translation.get(1) / mmPerInch;
                 telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
-                        translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+                        x_pos, y_pos, translation.get(2) / mmPerInch);
 
                 // express the rotation of the robot in degrees.
                 Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
                 telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+                telemetry.addData("x_Done = ", pos_x_correct);
             }
             else {
                 telemetry.addData("Visible Target", "none");
             }
             telemetry.update();
+
+            if ( translation != null ) {
+                x_difference = x_pos - x_target;
+                y_difference = y_pos - y_target;
+                if ( !pos_x_correct && Math.abs(x_difference) > 1) {
+                    if (Math.abs(x_difference) > 5) {
+                        if (x_difference > 0)
+                            moveFwdAndBackForMilliseconds(-0.2, 1000);
+                        else
+                            moveFwdAndBackForMilliseconds(0.2, 1000);
+                    } else {
+                        if (x_difference > 0)
+                            moveFwdAndBackForMilliseconds(-0.1, 1000);
+                        else
+                            moveFwdAndBackForMilliseconds(0.1, 1000);
+                    }
+                } else
+                    pos_x_correct = true;
+
+                if ( pos_x_correct ) {
+                    if (Math.abs(y_difference) > 0.5) {
+                        if (y_difference > 0)
+                            moveSidewayForMilliseconds(-0.2, 600);
+                        else
+                            moveSidewayForMilliseconds(0.2, 600);
+                    } else
+                        stop();
+                }
+            }
+
+            sleep(100);
         }
 
         // Disable Tracking when we are done;

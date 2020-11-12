@@ -15,15 +15,15 @@ public class UltimateGoalAutonomousMove extends UltimateGoalAutonomousBase {
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
-        String objectFound = TFRecognizeStack(3000);
-        telemetry.addData("Object Found: ", objectFound);
+        //String objectFound = TFRecognizeStack(3000);
+        //telemetry.addData("Object Found: ", objectFound);
         telemetry.update();
 
-        if (objectFound.equalsIgnoreCase(LABEL_NONE_ELEMENT))
+        //if (objectFound.equalsIgnoreCase(LABEL_NONE_ELEMENT))
             moveFwdAndBackForMilliseconds(0.4, 1000);
-        else if(objectFound.equalsIgnoreCase(LABEL_FIRST_ELEMENT))
+        //else if(objectFound.equalsIgnoreCase(LABEL_FIRST_ELEMENT))
             moveFwdAndBackForMilliseconds(-0.4, 1000);
-        else if(objectFound.equalsIgnoreCase(LABEL_SECOND_ELEMENT))
+       // else if(objectFound.equalsIgnoreCase(LABEL_SECOND_ELEMENT))
             moveSidewayForMilliseconds(0.4, 1000);
 
         /*telemetry.addData("Status: ", 1);
@@ -40,8 +40,8 @@ public class UltimateGoalAutonomousMove extends UltimateGoalAutonomousBase {
 
 
         // Vuforia and Tensorflow related clean-up
-        if (tfod != null) {
-            tfod.shutdown();
-        }
+       // if (tfod != null) {
+       //     tfod.shutdown();
+       // }
     }
 }
