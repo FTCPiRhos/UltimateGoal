@@ -30,16 +30,17 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvInternalCamera;
 import org.openftc.easyopencv.OpenCvPipeline;
+import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.List;
 
-@Autonomous(name="Auto Ultimate Goal Base", group="PiRhos")
+@Autonomous(name="Auto Ultimate Goal Base OpenCV Test", group="PiRhos")
 //@Disabled
-public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
+public abstract class AutonBaseWebcamTest extends LinearOpMode {
 
     /* Declare OpMode members. */
 //    HardwarePushbot         robot   = new HardwarePushbot();   // Use a Pushbot's hardware
-    protected DcMotor frontLeft, frontRight, backLeft, backRight, FW;
+   // protected DcMotor frontLeft, frontRight, backLeft, backRight, FW;
 
     protected ElapsedTime runtime = new ElapsedTime();
 
@@ -53,48 +54,47 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
 
     // Vuforia and Tensorflow related initialization
-    /*private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
+    private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
     protected static final String LABEL_FIRST_ELEMENT = "Quad";
     protected static final String LABEL_SECOND_ELEMENT = "Single";
     protected static final String LABEL_NONE_ELEMENT = "None";
 
     private static final String VUFORIA_KEY =
             "AdK8eN7/////AAABmW0I+yjROEzugc7U5K8Gc50Zsbe0yWcOgrl6WKqYU/Fonb8sBLtyq4sTsoBNG9FeQqCrpmDZnDIXbsXXTUAxWGAfB4nRg+5+qjg8K+zwZGJWgEFxUonjXaeC6dCfnoQ9ZcCi6im+BkmEw5g3uXVdYr8J+6ygmRLd5LGIq4p3huYdrq3JQWNu43Vuwz5Bb9is861q7XQ224ZXvpMzHdU3CcvLo8imHVbFPUOVaV6cquuEyqcFArHhNUWn4m3IrrDaLRzCkD3dK5fT1+WF43BTq2C8NmtGYDC6v8p3e7+NTPUKzxhJiTZk7yxNAYiNd8U+vMdKi1Dxe3OFCKTRT+xiLjW6arbQnj+vmIZlZwfcIZ7o";
-    */
+
     /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
      */
-    //protected VuforiaLocalizer vuforia;
+    protected VuforiaLocalizer vuforia;
 
     /**
-     *  is the variable we will use to store our instance of the TensorFlow Object
+     * {@link #tfod} is the variable we will use to store our instance of the TensorFlow Object
      * Detection engine.
      */
-    //protected TFObjectDetector tfod;
+    protected TFObjectDetector tfod;
 
-    //OpenCV related initalization..
-//    OpenCvInternalCamera phoneCam;
-//    OpenCvCamera webcam;
+    //OpenCV related initalization
+    OpenCvInternalCamera phoneCam;
     StarterStackDeterminationPipeline pipeline;
-
+    OpenCvCamera webcam;
     protected void initHardware() {
         // Vuforia and Tensorflow related initialization
         // The TFObjectDetector uses the camera frames from the VuforiaLocalizer, so we create that
         // first.
-        //initVuforia();
-        //initTfod();
+       // initVuforia();
+       // initTfod();
 
-        //if (tfod != null) {
+       // if (tfod != null) {
        //     tfod.activate();
-        //}
+       // }
 
         /*
          * Initialize the drive system variables.
          * The init() method of the hardware class does all the work here
          */
 //        robot.init(hardwareMap);
-
+/*
         frontLeft = hardwareMap.get(DcMotor.class, "leftFront");
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -108,23 +108,19 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
-
+*/
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        //phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
+        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"));
         pipeline = new StarterStackDeterminationPipeline();
-
-//        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-//        phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
-//        phoneCam.setPipeline(pipeline);
-//        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-//        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-//        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"));
-//        webcam.setPipeline(pipeline);
+        //phoneCam.setPipeline(pipeline);
+        webcam.setPipeline(pipeline);
 
         // We set the viewport policy to optimized view so the preview doesn't appear 90 deg
         // out when the RC activity is in portrait. We do our actual image processing assuming
         // landscape orientation, though.
-/*
         webcam.setViewportRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW);
-
+/*
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
@@ -133,11 +129,20 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
                 webcam.startStreaming(320,240, OpenCvCameraRotation.SIDEWAYS_LEFT);
             }
         });
-*/
+
+ */
+        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                webcam.startStreaming(320,240, OpenCvCameraRotation.UPRIGHT);
+            }
+        });
         telemetry.addData("Status", "Initialization Done");
         telemetry.update();
     }
-
+/*
     protected void moveSideway(double speed, int leftPos, int rightPos) {
 
         // Right = +ve speed; Left = -ve speed
@@ -173,7 +178,7 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
     }
 
-    protected void moveFwdAndBack(double speed, int leftPos, int rightPos) {
+    protected void moveFwdAndBack(double speed, int leftPos, int rightPos, int timeouts) {
 
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -196,13 +201,13 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
         ElapsedTime runtime = new ElapsedTime();
 
-        while (opModeIsActive() && (frontLeft.isBusy() && frontRight.isBusy())) {
+        while (opModeIsActive() && (frontLeft.isBusy() && frontRight.isBusy()) && runtime.seconds() < timeouts) {
 
             // Display it for the driver.
-            telemetry.addData("LF", frontLeft.getCurrentPosition());
-            telemetry.addData("RF", frontRight.getCurrentPosition());
-            telemetry.addData("LB", backLeft.getCurrentPosition());
-            telemetry.addData("RB", backRight.getCurrentPosition());
+            telemetry.addData("LF", frontLeft.getPower());
+            telemetry.addData("RF", frontRight.getPower());
+            telemetry.addData("LB", backLeft.getPower());
+            telemetry.addData("RB", backRight.getPower());
             telemetry.addData("Speed: ", speed);
             telemetry.update();
         }
@@ -234,13 +239,13 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
         while (opModeIsActive() && runtime.milliseconds() < milliseconds) {
             // Display it for the driver.
-            //telemetry.addData("LF", frontLeft.getCurrentPosition());
-            //telemetry.addData("RF", frontRight.getCurrentPosition());
-            //telemetry.addData("LB", backLeft.getCurrentPosition());
-            //telemetry.addData("RB", backRight.getCurrentPosition());
-            //telemetry.addData("Speed", speed);
-            //telemetry.addData("Second", milliseconds);
-            //telemetry.update();
+            telemetry.addData("LF", frontLeft.getCurrentPosition());
+            telemetry.addData("RF", frontRight.getCurrentPosition());
+            telemetry.addData("LB", backLeft.getCurrentPosition());
+            telemetry.addData("RB", backRight.getCurrentPosition());
+            telemetry.addData("Speed", speed);
+            telemetry.addData("Second", milliseconds);
+            telemetry.update();
         }
 
         // Stop all motion;
@@ -271,14 +276,13 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
         ElapsedTime runtime = new ElapsedTime();
 
-
         while (opModeIsActive() && runtime.milliseconds() < milliseconds) {
             // Display it for the driver.
-            //telemetry.addData("LF", frontLeft.getCurrentPosition());
-            //telemetry.addData("RF", frontRight.getCurrentPosition());
-            //telemetry.addData("LB", backLeft.getCurrentPosition());
-            //telemetry.addData("RB", backRight.getCurrentPosition());
-            //telemetry.update();
+            telemetry.addData("LF", frontLeft.getCurrentPosition());
+            telemetry.addData("RF", frontRight.getCurrentPosition());
+            telemetry.addData("LB", backLeft.getCurrentPosition());
+            telemetry.addData("RB", backRight.getCurrentPosition());
+            telemetry.update();
         }
 
         // Stop all motion;
@@ -336,143 +340,6 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
     }
 
-
-    protected void moveForwardandBackwardEncoders( double speed,
-                                                   double distance ,double timeoutInMilliseconds){
-        int newBackLeftTarget;
-        int newFrontLeftTarget;
-        int newFrontRightTarget;
-        int newBackRightTarget;
-
-        // Ensure that the opmode is still active
-        if (opModeIsActive()) {
-
-            // Determine new target position, and pass to motor controller
-            newFrontLeftTarget = frontLeft.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
-            newFrontRightTarget = frontRight.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
-            newBackRightTarget = backRight.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
-            newBackLeftTarget = backLeft.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
-            frontLeft.setTargetPosition(newFrontLeftTarget);
-            frontRight.setTargetPosition(newFrontRightTarget);
-            backRight.setTargetPosition(newBackRightTarget);
-            backLeft.setTargetPosition(newBackLeftTarget);
-
-            // Turn On RUN_TO_POSITION
-            frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            // reset the timeout time and start motion.
-            runtime.reset();
-            frontLeft.setPower(speed);
-            frontRight.setPower(speed);
-            backRight.setPower(speed);
-            backLeft.setPower(speed);
-
-            // keep looping while we are still active, and there is time left, and both motors are running.
-            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
-            // its target position, the motion will stop.  This is "safer" in the event that the robot will
-            // always end the motion as soon as possible.
-            // However, if you require that BOTH motors have finished their moves before the robot continues
-            // onto the next step, use (isBusy() || isBusy()) in the loop test.
-            while (opModeIsActive() && (runtime.milliseconds() < timeoutInMilliseconds) &&
-                    (frontRight.isBusy() && frontLeft.isBusy() && backRight.isBusy() && backLeft.isBusy())) {
-
-                // Display it for the driver.
-                telemetry.addData("Path1",  "Running to %7d :%7d", newFrontLeftTarget,  newFrontRightTarget, newBackLeftTarget, newBackRightTarget);
-                telemetry.addData("Path2",  "Running at %7d :%7d", frontLeft.getCurrentPosition(), frontRight.getCurrentPosition(),backLeft.getCurrentPosition(),
-                        backRight.getCurrentPosition());
-
-                telemetry.update();
-            }
-
-            // Stop all motion;
-            frontLeft.setPower(0);
-            frontRight.setPower(0);
-            backLeft.setPower(0);
-            backRight.setPower(0);
-
-            // Turn off RUN_TO_POSITION
-            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-            //  sleep(250);   // optional pause after each move
-        }
-
-    }
-
-    protected void moveSideWaysEncoders( double speed, double distance ,double timeoutInMilliseconds){
-        speed = -speed;
-        int newBackLeftTarget;
-        int newFrontLeftTarget;
-        int newFrontRightTarget;
-        int newBackRightTarget;
-
-        // Ensure that the opmode is still active
-        if (opModeIsActive()) {
-
-            // Determine new target position, and pass to motor controller
-            newFrontLeftTarget = frontLeft.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
-            newFrontRightTarget = frontRight.getCurrentPosition() - (int)(distance * COUNTS_PER_INCH);
-            newBackRightTarget = backRight.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
-            newBackLeftTarget = backLeft.getCurrentPosition() - (int)(distance * COUNTS_PER_INCH);
-            frontLeft.setTargetPosition(newFrontLeftTarget);
-            frontRight.setTargetPosition(newFrontRightTarget);
-            backRight.setTargetPosition(newBackRightTarget);
-            backLeft.setTargetPosition(newBackLeftTarget);
-
-            // Turn On RUN_TO_POSITION
-            frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            // reset the timeout time and start motion.
-            runtime.reset();
-            frontLeft.setPower(speed);
-            frontRight.setPower(-speed);
-            backLeft.setPower(-speed);
-            backRight.setPower(speed);
-
-            // keep looping while we are still active, and there is time left, and both motors are running.
-            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
-            // its target position, the motion will stop.  This is "safer" in the event that the robot will
-            // always end the motion as soon as possible.
-            // However, if you require that BOTH motors have finished their moves before the robot continues
-            // onto the next step, use (isBusy() || isBusy()) in the loop test.
-            while (opModeIsActive() && (runtime.milliseconds() < timeoutInMilliseconds) &&
-                    (frontRight.isBusy() && frontLeft.isBusy() && backRight.isBusy() && backLeft.isBusy())) {
-
-                // Display it for the driver.
-                telemetry.addData("Path1",  "Running to %7d :%7d", newFrontLeftTarget,  newFrontRightTarget, newBackLeftTarget, newBackRightTarget);
-                telemetry.addData("Path2",  "Running at %7d :%7d", frontLeft.getCurrentPosition(), frontRight.getCurrentPosition(),backLeft.getCurrentPosition(),
-                        backRight.getCurrentPosition());
-
-                telemetry.update();
-            }
-
-            // Stop all motion;
-            frontLeft.setPower(0);
-            frontRight.setPower(0);
-            backLeft.setPower(0);
-            backRight.setPower(0);
-
-            // Turn off RUN_TO_POSITION
-            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-            //  sleep(250);   // optional pause after each move
-        }
-
-    }
-
-
-
     protected void moveSidewayForDistance(double speed, double inches, double timeoutInMilliseconds) {
         speed = -speed;
 
@@ -519,8 +386,8 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
         backRight.setPower(0);
 
     }
-
-    /*protected String TFRecognizeStack(double milliseconds) {
+*/
+    protected String TFRecognizeStack(double milliseconds) {
         ElapsedTime runtime = new ElapsedTime();
         String stackHeight = LABEL_NONE_ELEMENT;
         while (opModeIsActive() && runtime.milliseconds() < milliseconds) {
@@ -550,7 +417,7 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
         }
         return stackHeight;
-    }*/
+    }
 
     protected StarterStackDeterminationPipeline.RingPosition OpenCVRecognizeStack(double milliseconds) {
         ElapsedTime runtime = new ElapsedTime();
@@ -576,32 +443,32 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
     /**
      * Initialize the Vuforia localization engine.
      */
-   // private void initVuforia() {
+    private void initVuforia() {
         /*
          * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
          */
-       // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
-       // parameters.vuforiaLicenseKey = VUFORIA_KEY;
-       // parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
 
         //  Instantiate the Vuforia engine
-        //vuforia = ClassFactory.getInstance().createVuforia(parameters);
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
 
         // Loading trackables is not necessary for the TensorFlow Object Detection engine.
-    //}
+    }
 
     /**
      * Initialize the TensorFlow Object Detection engine.
      */
-    /*private void initTfod() {
+    private void initTfod() {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
         tfodParameters.minResultConfidence = 0.8f;
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
-    }*/
+    }
 
     public static class StarterStackDeterminationPipeline extends OpenCvPipeline
     {
@@ -624,7 +491,7 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
         /*
          * The core values which define the location and size of the sample regions
          */
-        static final Point REGION1_TOPLEFT_ANCHOR_POINT = new Point(200,50);
+        static final Point REGION1_TOPLEFT_ANCHOR_POINT = new Point(181,98);
         static final int REGION_WIDTH = 30;
         static final int REGION_HEIGHT = 25;
 

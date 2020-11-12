@@ -38,7 +38,6 @@ import java.util.List;
 public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     /* Declare OpMode members. */
-//    HardwarePushbot         robot   = new HardwarePushbot();   // Use a Pushbot's hardware
     protected DcMotor frontLeft, frontRight, backLeft, backRight;
 
     protected ElapsedTime runtime = new ElapsedTime();
@@ -92,79 +91,6 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         telemetry.addData("Status", "Initialization Done");
         telemetry.update();
-    }
-
-    protected void moveSideway(double speed, int leftPos, int rightPos) {
-
-        // Right = +ve speed; Left = -ve speed
-        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        frontLeft.setTargetPosition(leftPos);
-        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        frontRight.setTargetPosition(rightPos);
-        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        frontLeft.setPower(speed);
-        frontRight.setPower(-speed);
-        backLeft.setPower(-speed);
-        backRight.setPower(speed);
-
-        while (opModeIsActive() && (frontLeft.isBusy() && frontRight.isBusy())) {
-            // Display it for the driver.
-            telemetry.addData("LF", frontLeft.getCurrentPosition());
-            telemetry.addData("RF", frontRight.getCurrentPosition());
-            telemetry.addData("LB", backLeft.getCurrentPosition());
-            telemetry.addData("RB", backRight.getCurrentPosition());
-            telemetry.update();
-        }
-
-        // Stop all motion;
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backLeft.setPower(0);
-        backRight.setPower(0);
-
-    }
-
-    protected void moveFwdAndBack(double speed, int leftPos, int rightPos) {
-
-        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        frontLeft.setTargetPosition(leftPos);
-        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        frontRight.setTargetPosition(rightPos);
-        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        frontLeft.setPower(speed);
-        frontRight.setPower(speed);
-        backLeft.setPower(-speed);
-        backRight.setPower(-speed);
-
-        ElapsedTime runtime = new ElapsedTime();
-
-        while (opModeIsActive() && (frontLeft.isBusy() && frontRight.isBusy())) {
-
-            // Display it for the driver.
-            telemetry.addData("LF", frontLeft.getCurrentPosition());
-            telemetry.addData("RF", frontRight.getCurrentPosition());
-            telemetry.addData("LB", backLeft.getCurrentPosition());
-            telemetry.addData("RB", backRight.getCurrentPosition());
-            telemetry.addData("Speed: ", speed);
-            telemetry.update();
-        }
-
-        // Stop all motion;
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backLeft.setPower(0);
-        backRight.setPower(0);
-
     }
 
     protected void moveFwdAndBackForMilliseconds(double speed, double milliseconds) {
@@ -241,6 +167,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     }
 
     protected void moveFwdAndBackForDistance(double speed, double inches, double timeoutInMilliseconds) {
+/*
         speed = -speed;
 
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -284,10 +211,11 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         frontRight.setPower(0);
         backLeft.setPower(0);
         backRight.setPower(0);
-
+*/
     }
 
     protected void moveSidewayForDistance(double speed, double inches, double timeoutInMilliseconds) {
+/*
         speed = -speed;
 
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -331,6 +259,15 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         frontRight.setPower(0);
         backLeft.setPower(0);
         backRight.setPower(0);
+*/
+    }
+
+    protected void rotate( double speed, int degree ) {
+
+    }
+
+    // Shooting ring with flywheel
+    protected void shoot() {
 
     }
 

@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode.vision;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.teamcode.AutonBaseWebcamTest;
 import org.firstinspires.ftc.teamcode.UltimateGoalAutonomousBase;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -18,10 +20,11 @@ import org.openftc.easyopencv.OpenCvPipeline;
 
 @Autonomous(name="OpenCV Test", group="PiRhos")
 //@Disabled
-public class OpenCVTest extends UltimateGoalAutonomousBase
+public class OpenCVTest extends AutonBaseWebcamTest
 {
-    OpenCvInternalCamera phoneCam;
     OpenCVTestPipeline pipeline;
+    OpenCvCamera webcam;
+
 
     @Override
     public void runOpMode()
@@ -34,23 +37,50 @@ public class OpenCVTest extends UltimateGoalAutonomousBase
          */
         initHardware();
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
+        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
         pipeline = new OpenCVTestPipeline();
-        phoneCam.setPipeline(pipeline);
+        webcam.setPipeline(pipeline);
 
-        // We set the viewport policy to optimized view so the preview doesn't appear 90 deg
-        // out when the RC activity is in portrait. We do our actual image processing assuming
-        // landscape orientation, though.
-        phoneCam.setViewportRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW);
-
-        phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        /*
+         * Open the connection to the camera device. New in v1.4.0 is the ability
+         * to open the camera asynchronously, and this is now the recommended way
+         * to do it. The benefits of opening async include faster init time, and
+         * better behavior when pressing stop during init (i.e. less of a chance
+         * of tripping the stuck watchdog)
+         *
+         * If you really want to open synchronously, the old method is still available.
+         */
+        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
             public void onOpened()
             {
-                phoneCam.startStreaming(320,240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+                /*
+                 * Tell the webcam to start streaming images to us! Note that you must make sure
+                 * the resolution you specify is supported by the camera. If it is not, an exception
+                 * will be thrown.
+                 *
+                 * Keep in mind that the SDK's UVC driver (what OpenCvWebcam uses under the hood) only
+                 * supports streaming from the webcam in the uncompressed YUV image format. This means
+                 * that the maximum resolution you can stream at and still get up to 30FPS is 480p (640x480).
+                 * Streaming at e.g. 720p will limit you to up to 10FPS and so on and so forth.
+                 *
+                 * Also, we specify the rotation that the webcam is used in. This is so that the image
+                 * from the camera sensor can be rotated such that it is always displayed with the image upright.
+                 * For a front facing camera, rotation is defined assuming the user is looking at the screen.
+                 * For a rear facing camera or a webcam, rotation is defined assuming the camera is facing
+                 * away from the user.
+                 */
+                webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
             }
         });
+
+        telemetry.addLine("Waiting for start");
+        telemetry.update();
+
+        /*
+         * Wait for the user to press start on the Driver Station
+         */
 
         waitForStart();
 
@@ -62,7 +92,7 @@ public class OpenCVTest extends UltimateGoalAutonomousBase
 
             // Don't burn CPU cycles busy-looping in this sample
             sleep(1000);
-
+/*
             if (pipeline.getAnalysis() == OpenCVTestPipeline.RingPosition.ONE){
                 moveFwdAndBackForMilliseconds(.5,1000);
                 stop();
@@ -75,6 +105,9 @@ public class OpenCVTest extends UltimateGoalAutonomousBase
                 moveSidewayForMilliseconds(.5,1000);
                 stop();
             }
+
+ */
+
 
         }
     }

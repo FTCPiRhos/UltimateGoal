@@ -27,15 +27,15 @@ public class FirstMecanumOpMode extends LinearOpMode {
        // step (using the FTC Robot Controller app on the phone).
        leftFront = hardwareMap.get(DcMotor.class, "left_front");
        rightFront = hardwareMap.get(DcMotor.class, "right_front");
-       leftRear = hardwareMap.get(DcMotor.class, "left_rear");
-       rightRear = hardwareMap.get(DcMotor.class, "right_rear");
+       leftRear = hardwareMap.get(DcMotor.class, "left_back");
+       rightRear = hardwareMap.get(DcMotor.class, "right_back");
 
        // Most robots need the motor on one side to be reversed to drive forward
        // Reverse the motor that runs backwards when connected directly to the battery
-       leftFront.setDirection(DcMotor.Direction.FORWARD);
-       leftRear.setDirection((DcMotor.Direction.FORWARD));
-       rightFront.setDirection(DcMotor.Direction.REVERSE);
-       rightRear.setDirection(DcMotor.Direction.REVERSE);
+       leftFront.setDirection(DcMotor.Direction.REVERSE);
+       leftRear.setDirection((DcMotor.Direction.REVERSE));
+       rightFront.setDirection(DcMotor.Direction.FORWARD);
+       rightRear.setDirection(DcMotor.Direction.FORWARD);
 
        // Wait for the game to start (driver presses PLAY)
        waitForStart();
