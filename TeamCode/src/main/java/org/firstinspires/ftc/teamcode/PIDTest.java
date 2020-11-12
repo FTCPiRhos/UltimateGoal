@@ -71,10 +71,16 @@ public class PIDTest extends UltimateGoalAutonomousBase {
         double kd = 0.1;
         double targetDistance = targetInches * COUNTS_PER_INCH;
         double errorFL = frontLeft.getCurrentPosition() - targetDistance;
+        double errorFR = frontRight.getCurrentPosition() - targetDistance;
+        double errorBL = backLeft.getCurrentPosition() - targetDistance;
+        double errorBR = backRight.getCurrentPosition() - targetDistance;
         double lastErrorFL = 0;
+        double lastErrorFR = 0;
+        double lastErrorBL = 0;
+        double lastErrorBR = 0;
         double integral = 0;
         ElapsedTime timer = new ElapsedTime();
-        while (Math.abs(errorFL) >=100) {
+        while (Math.abs(errorFL) >=200 ||Math.abs(errorFR) >=200 || Math.abs(errorBL) >=200  ) {
 
             errorFL = frontLeft.getCurrentPosition() - targetDistance;
             double deltaError = lastErrorFL - errorFL;
