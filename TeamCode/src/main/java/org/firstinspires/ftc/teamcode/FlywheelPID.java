@@ -86,7 +86,7 @@ public class FlywheelPID extends LinearOpMode {
 
     public double SetRPM (double targetRPM, double motorPower){
         double kp = 0.0025;
-        double ki = 0.000025 ;
+        double ki = 0.000025;
         double kd = 0.000000025 * 0 ;
         double errorRPM = targetRPM + getRPM();
         double curPower = motorPower;
