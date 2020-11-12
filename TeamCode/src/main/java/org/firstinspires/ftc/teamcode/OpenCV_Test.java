@@ -81,8 +81,7 @@ public class OpenCV_Test extends UltimateGoalAutonomousBaseOpenCV
         phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
-            public void onOpened()
-            {
+            public void onOpened() {
                 phoneCam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
 
                 pipeline = new StoneOrientationAnalysisPipeline();
