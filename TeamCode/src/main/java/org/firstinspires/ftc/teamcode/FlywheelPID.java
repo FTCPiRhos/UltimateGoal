@@ -4,6 +4,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.USBAccessibleLynxModule;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -22,11 +24,12 @@ public class FlywheelPID extends LinearOpMode {
     private DcMotor frontRight = null;
     private DcMotor backLeft = null;
     private DcMotor backRight = null;
+    private DcMotor flywheelShooter = null;
 
     static final double COUNTS_PER_MOTOR_REV = 537.6;    // eg: TETRIX Motor Encoder
-    static final double DRIVE_GEAR_REDUCTION = 2.0 / 3;     // This is < 1.0 if geared UP
+    static final double DRIVE_GEAR_REDUCTION = 2.0 / 2;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 3.937;   // For figuring circumference - 100mm
-    static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
+    static final double COUNTS_PER_INCH = 1.45 * (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
     static final double DRIVE_SPEED_SLOW = 0.4;
     static final double DRIVE_SPEED = 0.7;
@@ -40,7 +43,7 @@ public class FlywheelPID extends LinearOpMode {
         telemetry.update();
 
 
-
+        initDriveMotors();
         /*
          * Wait for the user to press start on the Driver Station
          */
@@ -49,9 +52,10 @@ public class FlywheelPID extends LinearOpMode {
         runtime.reset();
         telemetry.addLine("Started");
         telemetry.update();
-
-        double targetRPM = 132 ;
-        double backRightPower = -0.1;
+        // powershot rpm = 125~
+        // high tower rpm = 132~
+        double targetRPM = 50 ;
+        double flywheelPower = 0;
         while (opModeIsActive())
         {
             if (gamepad1.left_bumper){
@@ -60,21 +64,44 @@ public class FlywheelPID extends LinearOpMode {
             if (gamepad1.right_bumper){
                 targetRPM += 2;
             }
-            //backRightPower = SetRPM(targetRPM, backRightPower);
-            moveWPID(24,0);
+
+            //for (int i =0 ; i < 5 ; i = i + 1) {
+
+            flywheelPower = SetRPMWobbleGoal(targetRPM, flywheelPower);
+            //moveWPID(48,48);
+            //moveWPID(0,48);
+            //moveWPID(0,-48);
+
+                //moveWPID(-48,0);
+
+            //moveWPID(-24,-48);
+          //  }
+            /*
+            for (int i =0 ; i < 5 ; i = i + 1) {
+
+                //backRightPower = SetRPM(targetRPM, backRightPower);
+                moveWPID(48,4);
+                moveWPID(0,-48);
+                moveWPID(-24,0);
+
+                //moveWPID(-24,-48);
+            }
+            */
+
+
         }
     }
 
     public double getRPM(){
         double waitTime = 250;
         ElapsedTime timer = new ElapsedTime ();
-        double startFWCount = backRight.getCurrentPosition();
+        double startFWCount = flywheelShooter.getCurrentPosition();
         while (timer.milliseconds() < waitTime)
         {
         }
 
 
-        double deltaFW = backRight.getCurrentPosition() - startFWCount;
+        double deltaFW = flywheelShooter.getCurrentPosition() - startFWCount;
 
         double RPM = (deltaFW * 240)/537.6;
 
@@ -86,8 +113,8 @@ public class FlywheelPID extends LinearOpMode {
 
     public double SetRPM (double targetRPM, double motorPower){
         double kp = 0.0025;
-        double ki = 0.000025;
-        double kd = 0.000000025 * 0 ;
+        double ki = 0.0000025;
+        double kd = 0.00000005 ;
         double errorRPM = targetRPM + getRPM();
         double curPower = motorPower;
         double lastErr = 0 ;
@@ -96,7 +123,7 @@ public class FlywheelPID extends LinearOpMode {
 
         while (Math.abs(errorRPM) > 1) {
             double deltaError = errorRPM - lastErr;
-            integralErr += errorRPM * timer.time();
+            if (Math.abs(errorRPM)<15) integralErr += errorRPM * timer.time();
             double derivative = deltaError/timer.time();
 
             timer.reset();
@@ -108,7 +135,7 @@ public class FlywheelPID extends LinearOpMode {
             if (curPower > 0.7) curPower = 0.7 ;
             if (curPower < -0.7) curPower = -0.7 ;
 
-            backRight.setPower(curPower);
+            flywheelShooter.setPower(curPower);
             double RPM = getRPM();
             errorRPM = targetRPM + RPM;
             telemetry.addData("RPM = ", RPM);
@@ -124,59 +151,211 @@ public class FlywheelPID extends LinearOpMode {
         return (curPower);
     }
 
-    public void moveWPID (double targetInches, double setPower){
+    public double SetRPMWobbleGoal (double targetRPM, double motorPower){
+        double kp = 0.0025;
+        double ki = 0.0000025 * 0;
+        double kd = 0.00000005 * 0 ;
+        double errorRPM = targetRPM + getRPM();
+        double curPower = motorPower;
+        double lastErr = 0 ;
+        double integralErr = 0 ;
+        ElapsedTime timer = new ElapsedTime();
+
+        while (Math.abs(errorRPM) > 1) {
+            double deltaError = errorRPM - lastErr;
+            if (Math.abs(errorRPM)<15) integralErr += errorRPM * timer.time();
+            double derivative = deltaError/timer.time();
+
+            timer.reset();
+
+            double deltaPower = - ((errorRPM * kp) + (integralErr * ki) +(derivative *kd)) ;
+
+            curPower += deltaPower ;
+
+            if (curPower > 0.7) curPower = 0.7 ;
+            if (curPower < -0.7) curPower = -0.7 ;
+
+            flywheelShooter.setPower(curPower);
+            double RPM = getRPM();
+            errorRPM = targetRPM + RPM;
+            telemetry.addData("RPM = ", RPM);
+            telemetry.addData("errorRPM = ", errorRPM);
+            telemetry.addData("curPower  = ", curPower);
+            telemetry.addData("deltaPower  = ", deltaPower);
+            telemetry.update();
+
+            if (Math.abs(targetRPM) > RPM){
+                return (curPower);
+            }
+        }
+        return (curPower);
+    }
+    public void initDriveMotors(){
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontRight.setMode((DcMotor.RunMode.STOP_AND_RESET_ENCODER));
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        double targetPos = targetInches * COUNTS_PER_INCH;
-        double kp = 0.0025;
-        double ki = 0.0025;
-        double kd = 0;
-        double integral = 0;
-        double errorFrontLeft = targetPos;
-        double errorBackLeft = targetPos;
-        double errorFrontRight = targetPos;
-        double errorBackRight = targetPos;
-        double lastMinError = 0;
-        double curPower = setPower;
+        frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        frontLeft.setPower(0);
+        frontRight.setPower(0);
+        backRight.setPower(0);
+        backLeft.setPower(0);
+    }
+    public void moveWPID (double targetXInches, double targetYInches){
+        double targetXCount = targetXInches * COUNTS_PER_INCH;
+        double targetYCount = targetYInches * COUNTS_PER_INCH;
+        // get starting X and Y position from encoders
+        // and solving from equation
+
+        double initialYPos = (frontLeft.getCurrentPosition() + backLeft.getCurrentPosition() + frontRight.getCurrentPosition() + backRight.getCurrentPosition())/4;
+        double initialXPos = (frontLeft.getCurrentPosition() + backRight.getCurrentPosition() - backLeft.getCurrentPosition() - frontRight.getCurrentPosition())/4;
+        // adding Count + initial
+        double targetXPos = targetXCount + initialXPos;
+        double targetYPos = targetYCount + initialYPos;
+        // setting up X and Y for loop change
+        double currentXPos = initialXPos;
+        double currentYPos = initialYPos;
+        double kp = 0.000005;
+        double ki = 0.000025;
+        double kd = 0.00005;
+        double integralX = 0;
+        double integralY = 0;
+        double finalGain = 4 ;
+
+        double errorX = targetXPos - currentXPos;
+        double errorY = targetYPos - currentYPos;
+
+        boolean movementDoneX = (Math.abs(errorX)<25) ;
+        boolean movementDoneY = (Math.abs(errorY)<25) ;
+
+        double lastXError = 0;
+        double lastYError = 0;
+        double curPowerX = 0;
+        double curPowerY = 0;
+        double capPowerX = .35;
+        double capPowerY = .35;
+        double deltaKX = 1;
+        double deltaKY = 1;
+        boolean firstPass = true ;
+
+
+        double curPowerLF = 0;
+        double curPowerLB = 0;
+        double curPowerRF = 0;
+        double curPowerRB = 0;
+
         ElapsedTime timer = new ElapsedTime();
         // start loop while any error is > some number
-        // use the lowest change to not cause any slip with the wheels
-        while (Math.abs(errorFrontLeft) >= 500 || Math.abs(errorFrontRight) >= 500 || Math.abs(errorBackLeft) >= 500 || Math.abs(errorBackRight) >= 500 ){
-            double minError = Math.min(Math.abs(errorFrontLeft),Math.abs(errorFrontRight));
-            minError = Math.min(minError,Math.abs(errorBackLeft));
-            minError = Math.min(minError, Math.abs(errorBackRight));
+        while ((!movementDoneX || !movementDoneY) ){
 
-            double deltaMinError = minError - lastMinError;
+            double deltaXError = firstPass ? 0 : errorX - lastXError;
+            double deltaYError = firstPass ? 0 : errorY - lastYError;
 
-            integral += minError * timer.time();
-            double derivative = deltaMinError/timer.time();
+            firstPass = false ;
+
+            double curTime = timer.time();
+
+            integralX += errorX * curTime;
+            integralY += errorY * curTime;
+
+            double derivativeX = deltaXError/curTime;
+            double derivativeY = deltaYError/curTime;
+
 
             timer.reset();
 
-            double deltaPower = (minError * kp) + (integral * ki) + (derivative * kd);
-            curPower += deltaPower;
+            if (movementDoneX) deltaKX = 0;
+            if (movementDoneY) deltaKY = 0;
 
-            frontLeft.setPower(curPower);
-            frontRight.setPower(curPower);
-            backRight.setPower(curPower);
-            backLeft.setPower(curPower);
+            double deltaXPower = deltaKX * ((errorX * kp) + (integralX * ki) + (derivativeX * kd));
+            double deltaYPower = deltaKY * ((errorY * kp) + (integralY * ki) + (derivativeY * kd));
 
-            errorFrontLeft = targetPos - frontLeft.getCurrentPosition();
-            errorBackLeft = targetPos - backLeft.getCurrentPosition();
-            errorFrontRight = targetPos - frontRight.getCurrentPosition();
-            errorBackRight = targetPos - backRight.getCurrentPosition();
+            curPowerX = finalGain * deltaXPower;
+            curPowerY = finalGain * deltaYPower;
 
-            lastMinError = minError;
+            double usePwrX = curPowerX ;
+            double usePwrY = curPowerY ;
+
+            if (curPowerX > capPowerX) usePwrX = capPowerX;
+            if (curPowerX < (-1 *capPowerX)) usePwrX = -1 * capPowerX;
+
+            if (curPowerY > capPowerY) usePwrY = capPowerY;
+
+            if (curPowerY < (-1 * capPowerY)) usePwrY = -1 * capPowerY;
+
+            double PwrRatioX = (curPowerX != 0) ? Math.abs(usePwrX/curPowerX) : 0  ;
+            double PwrRatioY = (curPowerY != 0) ? Math.abs(usePwrY/curPowerY) : 0 ;
+
+            if (PwrRatioX != PwrRatioY) {
+                if ((PwrRatioX != 0) && (PwrRatioX < PwrRatioY)) {
+                    usePwrY = PwrRatioX * usePwrY / PwrRatioY  ;
+                }
+                if ((PwrRatioY != 0) && (PwrRatioY < PwrRatioX)) {
+                    usePwrX = PwrRatioY * usePwrX / PwrRatioX  ;
+                }
+
+            }
+
+            usePwrX = (!movementDoneX) ? usePwrX : 0 ;
+            usePwrY = (!movementDoneY) ? usePwrY : 0 ;
+
+             curPowerLF = usePwrY + usePwrX;
+             curPowerLB = usePwrY - usePwrX;
+             curPowerRF = usePwrY - usePwrX;
+             curPowerRB = usePwrY + usePwrX;
+
+            backLeft.setPower(curPowerLB);
+            frontRight.setPower(curPowerRF);
+
+            frontLeft.setPower(curPowerLF);
+            backRight.setPower(curPowerRB);
+
+             sleep(10);
+             currentYPos = (frontLeft.getCurrentPosition() + backLeft.getCurrentPosition() + frontRight.getCurrentPosition() + backRight.getCurrentPosition())/4;
+             currentXPos = (frontLeft.getCurrentPosition() + backRight.getCurrentPosition() - backLeft.getCurrentPosition() - frontRight.getCurrentPosition())/4;
+            errorX = (targetXPos - currentXPos) ;
+            errorY = (targetYPos - currentYPos);
 
 
+            lastXError = errorX;
+            lastYError = errorY;
+
+            movementDoneX = (Math.abs(errorX)<25) || movementDoneX;
+            movementDoneY = (Math.abs(errorY)<25) || movementDoneY;
+
+            telemetry.addData("ErrX = ", errorX) ;
+            telemetry.addData("ErrY = ", errorY) ;
+            telemetry.addData("Front Left Encoder =", frontLeft.getCurrentPosition());
+            telemetry.addData("Front Right Encoder ", frontRight.getCurrentPosition());
+            telemetry.addData("Back Left Encoder", backLeft.getCurrentPosition());
+            telemetry.addData("Back Right Encoder =" , backRight.getCurrentPosition());
+            telemetry.addData("Power ratio x =" , PwrRatioX);
+            telemetry.addData("Power ratio y =" , PwrRatioY);
+
+
+
+            telemetry.update();
 
 
         }
 
+        double rampMul = 1.0 ;
 
+        for (int i =0 ; i < 20 ; i++) {
+            frontLeft.setPower(curPowerLF * rampMul );
+            frontRight.setPower(curPowerRF *rampMul );
 
+            backRight.setPower(curPowerRB * rampMul);
+            backLeft.setPower(curPowerLB * rampMul);
+
+            rampMul -= 0.05 ;
+
+            sleep(10);
+        }
 
 
     }
@@ -211,8 +390,17 @@ public class FlywheelPID extends LinearOpMode {
         backRight = hardwareMap.get(DcMotor.class, "right_back");
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        frontRight.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
+
+        flywheelShooter = hardwareMap.get(DcMotor.class, "flywheel_shooter");
+        flywheelShooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        flywheelShooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        backLeft.setDirection((DcMotor.Direction.REVERSE));
+        frontRight.setDirection(DcMotor.Direction.FORWARD);
+        backRight.setDirection(DcMotor.Direction.FORWARD);
+
+        flywheelShooter.setDirection(DcMotorSimple.Direction.REVERSE);
 /*
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
