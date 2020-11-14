@@ -43,58 +43,63 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     protected ElapsedTime runtime = new ElapsedTime();
 
-    static final double COUNTS_PER_MOTOR_REV = 1440 / 2;    // eg: TETRIX Motor Encoder
-    static final double DRIVE_GEAR_REDUCTION = 2.0 / 3;     // This is < 1.0 if geared UP
+    static final double COUNTS_PER_MOTOR_REV = 537.6;    // eg: TETRIX Motor Encoder
+    static final double DRIVE_GEAR_REDUCTION = 2.0 / 2;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 3.937;   // For figuring circumference - 100mm
-    static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
+    static final double COUNTS_PER_INCH = 1.45 * (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
     static final double DRIVE_SPEED_SLOW = 0.4;
     static final double DRIVE_SPEED = 0.7;
 
     //OpenCV related initalization
-    OpenCvInternalCamera phoneCam;
+    OpenCvInternalCamera webcam;
     StarterStackDeterminationPipeline pipeline;
 
     protected void initHardware() {
 
-        frontLeft = hardwareMap.get(DcMotor.class, "leftFront");
+        frontLeft = hardwareMap.get(DcMotor.class, "left_front");
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        frontRight = hardwareMap.get(DcMotor.class, "rightFront");
+        frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        frontRight = hardwareMap.get(DcMotor.class, "right_front");
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        backLeft = hardwareMap.get(DcMotor.class, "leftRear");
+        backLeft = hardwareMap.get(DcMotor.class, "left_back");
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        backRight = hardwareMap.get(DcMotor.class, "rightRear");
+        backRight = hardwareMap.get(DcMotor.class, "right_back");
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
 
         flywheelShooter = hardwareMap.get(DcMotor.class, "flywheel_shooter");
         flywheelShooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flywheelShooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        frontRight.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        backLeft.setDirection((DcMotor.Direction.REVERSE));
+        frontRight.setDirection(DcMotor.Direction.FORWARD);
+        backRight.setDirection(DcMotor.Direction.FORWARD);
+
         flywheelShooter.setDirection(DcMotorSimple.Direction.REVERSE);
 
 
-        //int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        //phoneCam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
-        //pipeline = new StarterStackDeterminationPipeline();
-        //phoneCam.setPipeline(pipeline);
+
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        webcam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
+        pipeline = new StarterStackDeterminationPipeline();
+        webcam.setPipeline(pipeline);
 
         // We set the viewport policy to optimized view so the preview doesn't appear 90 deg
         // out when the RC activity is in portrait. We do our actual image processing assuming
         // landscape orientation, though.
-        //phoneCam.setViewportRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW);
+        webcam.setViewportRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW);
 
-        //phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
-        //{
-          //  @Override
-            //public void onOpened()
-            //{
-              //  phoneCam.startStreaming(320,240, OpenCvCameraRotation.SIDEWAYS_LEFT);
-            //}
-        //});
+        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+           @Override
+           public void onOpened()
+           {
+               webcam.startStreaming(320,240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+            }
+        });
 
         telemetry.addData("Status", "Initialization Done");
         telemetry.update();
@@ -152,7 +157,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(targetRPM) > RPM){
+            if (Math.abs(errorRPM) <  2 ){
                 return (curPower);
             }
         }
@@ -192,7 +197,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(targetRPM) > RPM){
+            if (Math.abs(errorRPM) < 2) {
                 return (curPower);
             }
         }
