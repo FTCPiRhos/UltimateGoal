@@ -144,7 +144,7 @@ public class FlywheelPID extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(targetRPM) > RPM){
+            if (Math.abs(errorRPM) < 2){
                 return (curPower);
             }
         }
@@ -184,7 +184,7 @@ public class FlywheelPID extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(targetRPM) > RPM){
+            if (Math.abs(errorRPM) < 2 ){
                 return (curPower);
             }
         }

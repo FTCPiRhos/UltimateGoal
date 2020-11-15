@@ -106,7 +106,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     }
 
     public double getRPM(){
-        double waitTime = 250;
+        double waitTime = 50;
         ElapsedTime timer = new ElapsedTime ();
         double startFWCount = flywheelShooter.getCurrentPosition();
         while (timer.milliseconds() < waitTime)
@@ -116,7 +116,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         double deltaFW = flywheelShooter.getCurrentPosition() - startFWCount;
 
-        double RPM = (deltaFW * 240)/537.6;
+        double RPM = 5 * (deltaFW * 240)/537.6;
 
         return RPM;
 
@@ -125,15 +125,15 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
 
     public double SetRPM (double targetRPM, double motorPower){
-        double kp = 0.0025;
-        double ki = 0.0000025;
-        double kd = 0.00000005 ;
+        double kp = 0.00025;
+        double ki = 0.0000025 ;
+        double kd = 0.0000001 ;
         double errorRPM = targetRPM + getRPM();
         double curPower = motorPower;
         double lastErr = 0 ;
         double integralErr = 0 ;
         ElapsedTime timer = new ElapsedTime();
-
+        int inLockCount = 0 ;
         while (Math.abs(errorRPM) > 1) {
             double deltaError = errorRPM - lastErr;
             if (Math.abs(errorRPM)<15) integralErr += errorRPM * timer.time();
@@ -157,8 +157,14 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(errorRPM) <  2 ){
-                return (curPower);
+            if (Math.abs(errorRPM) <  0.5 ){
+                inLockCount += 1 ;
+                if (inLockCount > 5) {
+                    return (curPower);
+                }
+            }
+            else {
+                inLockCount = 0 ;
             }
         }
         return (curPower);
@@ -197,21 +203,30 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(errorRPM) < 2) {
+            if (Math.abs(errorRPM) < 1) {
                 return (curPower);
             }
         }
         return (curPower);
     }
 
-    public void moveWPID (double targetXInches, double targetYInches){
+    public void moveWPID (double targetXInches, double targetYInches, double rightMul){
+
+
+        frontLeft.setPower(0);
+        frontRight.setPower(0);
+
+        backRight.setPower(0);
+        backLeft.setPower(0);
+
+
         double targetXCount = targetXInches * COUNTS_PER_INCH;
         double targetYCount = targetYInches * COUNTS_PER_INCH;
         // get starting X and Y position from encoders
         // and solving from equation
 
-        double initialYPos = (frontLeft.getCurrentPosition() + backLeft.getCurrentPosition() + frontRight.getCurrentPosition() + backRight.getCurrentPosition())/4;
-        double initialXPos = (frontLeft.getCurrentPosition() + backRight.getCurrentPosition() - backLeft.getCurrentPosition() - frontRight.getCurrentPosition())/4;
+        double initialYPos = ( backLeft.getCurrentPosition() + backRight.getCurrentPosition())/2;
+        double initialXPos = ( backRight.getCurrentPosition() - backLeft.getCurrentPosition())/2;
         // adding Count + initial
         double targetXPos = targetXCount + initialXPos;
         double targetYPos = targetYCount + initialYPos;
@@ -219,11 +234,11 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         double currentXPos = initialXPos;
         double currentYPos = initialYPos;
         double kp = 0.000005;
-        double ki = 0.000025;
+        double ki = 0.00005;
         double kd = 0.00005;
         double integralX = 0;
         double integralY = 0;
-        double finalGain = 4 ;
+        double finalGain = 5 ;
 
         double errorX = targetXPos - currentXPos;
         double errorY = targetYPos - currentYPos;
@@ -237,6 +252,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         double curPowerY = 0;
         double capPowerX = .35;
         double capPowerY = .35;
+        double minPowerX = .2;
+        double minPowerY = .1;
         double deltaKX = 1;
         double deltaKY = 1;
         boolean firstPass = true ;
@@ -275,9 +292,12 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
             curPowerX = finalGain * deltaXPower;
             curPowerY = finalGain * deltaYPower;
+            double powerLowThreshMul = 0;
 
-            double usePwrX = curPowerX ;
-            double usePwrY = curPowerY ;
+            if (((Math.abs(curPowerX)) > minPowerX )  ||  ((Math.abs(curPowerY)) > minPowerY)) powerLowThreshMul = 1;
+
+            double usePwrX = powerLowThreshMul * curPowerX ;
+            double usePwrY = powerLowThreshMul * curPowerY ;
 
             if (curPowerX > capPowerX) usePwrX = capPowerX;
             if (curPowerX < (-1 *capPowerX)) usePwrX = -1 * capPowerX;
@@ -304,18 +324,26 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
             curPowerLF = usePwrY + usePwrX;
             curPowerLB = usePwrY - usePwrX;
-            curPowerRF = usePwrY - usePwrX;
-            curPowerRB = usePwrY + usePwrX;
+            curPowerRF = rightMul * (usePwrY - usePwrX);
+            curPowerRB = rightMul * (usePwrY + usePwrX);
 
+            backRight.setPower(curPowerRB);
             backLeft.setPower(curPowerLB);
-            frontRight.setPower(curPowerRF);
 
             frontLeft.setPower(curPowerLF);
-            backRight.setPower(curPowerRB);
+            frontRight.setPower(curPowerRF);
 
-            sleep(10);
-            currentYPos = (frontLeft.getCurrentPosition() + backLeft.getCurrentPosition() + frontRight.getCurrentPosition() + backRight.getCurrentPosition())/4;
-            currentXPos = (frontLeft.getCurrentPosition() + backRight.getCurrentPosition() - backLeft.getCurrentPosition() - frontRight.getCurrentPosition())/4;
+            sleep(25);
+
+            double posBL = backLeft.getCurrentPosition() ;
+            double posBR = backRight.getCurrentPosition() ;
+
+            double posFL = frontLeft.getCurrentPosition() ;
+            double posFR = frontRight.getCurrentPosition() ;
+
+            currentYPos = (posBL  + posBR)/2;
+            currentXPos = ( posBR - posBL)/2;
+
             errorX = (targetXPos - currentXPos) ;
             errorY = (targetYPos - currentYPos);
 
@@ -328,10 +356,10 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
             telemetry.addData("ErrX = ", errorX) ;
             telemetry.addData("ErrY = ", errorY) ;
-            telemetry.addData("Front Left Encoder =", frontLeft.getCurrentPosition());
-            telemetry.addData("Front Right Encoder ", frontRight.getCurrentPosition());
-            telemetry.addData("Back Left Encoder", backLeft.getCurrentPosition());
-            telemetry.addData("Back Right Encoder =" , backRight.getCurrentPosition());
+            telemetry.addData("Front Left Encoder =", posFL);
+            telemetry.addData("Front Right Encoder ", posFR);
+            telemetry.addData("Back Left Encoder", posBL);
+            telemetry.addData("Back Right Encoder =" , posBR);
             telemetry.addData("Power ratio x =" , PwrRatioX);
             telemetry.addData("Power ratio y =" , PwrRatioY);
 
@@ -344,15 +372,13 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         double rampMul = 1.0 ;
 
-        for (int i =0 ; i < 20 ; i++) {
+        for (int i =0 ; i < 5 ; i++) {
+            rampMul -= 0.2 ;
             frontLeft.setPower(curPowerLF * rampMul );
             frontRight.setPower(curPowerRF *rampMul );
 
             backRight.setPower(curPowerRB * rampMul);
             backLeft.setPower(curPowerLB * rampMul);
-
-            rampMul -= 0.05 ;
-
             sleep(10);
         }
 

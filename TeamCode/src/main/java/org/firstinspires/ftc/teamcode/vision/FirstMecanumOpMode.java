@@ -11,10 +11,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class FirstMecanumOpMode extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor leftFront = null;
-    private DcMotor rightFront = null;
-    private DcMotor leftRear = null;
-    private DcMotor rightRear = null;
+    private DcMotor frontLeft = null;
+    private DcMotor frontRight = null;
+    private DcMotor backLeft = null;
+    private DcMotor backRight = null;
 
 
    @Override
@@ -25,18 +25,17 @@ public class FirstMecanumOpMode extends LinearOpMode {
        // Initialize the hardware variables. Note that the strings used here as parameters
        // to 'get' must correspond to the names assigned during the robot configuration
        // step (using the FTC Robot Controller app on the phone).
-       leftFront = hardwareMap.get(DcMotor.class, "left_front");
-       rightFront = hardwareMap.get(DcMotor.class, "right_front");
-       leftRear = hardwareMap.get(DcMotor.class, "left_back");
-       rightRear = hardwareMap.get(DcMotor.class, "right_back");
+       frontLeft = hardwareMap.get(DcMotor.class, "left_front");
+       frontRight = hardwareMap.get(DcMotor.class, "right_front");
+       backLeft = hardwareMap.get(DcMotor.class, "left_back");
+       backRight = hardwareMap.get(DcMotor.class, "right_back");
 
        // Most robots need the motor on one side to be reversed to drive forward
        // Reverse the motor that runs backwards when connected directly to the battery
-       leftFront.setDirection(DcMotor.Direction.REVERSE);
-       leftRear.setDirection((DcMotor.Direction.FORWARD));
-       rightFront.setDirection(DcMotor.Direction.FORWARD);
-       rightRear.setDirection(DcMotor.Direction.FORWARD);
-
+       frontLeft.setDirection(DcMotor.Direction.REVERSE);
+       backLeft.setDirection((DcMotor.Direction.REVERSE));
+       frontRight.setDirection(DcMotor.Direction.FORWARD);
+       backRight.setDirection(DcMotor.Direction.FORWARD);
        // Wait for the game to start (driver presses PLAY)
        waitForStart();
        runtime.reset();
@@ -72,10 +71,15 @@ public class FirstMecanumOpMode extends LinearOpMode {
                RBPower /= max;
            }
 
-           leftFront.setPower(LFPower);
-           leftRear.setPower(LBPower);
-           rightFront.setPower(RFPower);
-           rightRear.setPower(RBPower);
+           LFPower = LFPower * 0.75;
+           LBPower = LBPower * 0.75;
+           RFPower = RFPower * 0.75;
+           RBPower = RBPower * 0.75;
+
+           frontLeft.setPower(LFPower);
+           backLeft.setPower(LBPower);
+           frontRight.setPower(RFPower);
+           backRight.setPower(RBPower);
 
 
 
