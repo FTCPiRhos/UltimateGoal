@@ -42,7 +42,7 @@ public class Auto_Blue_Left extends UltimateGoalAutonomousBaseOpenCV{
             moveWPID(-6, 44, 1.025);
         }
 
-        shooterPwr = SetRPM(133, shooterPwr);
+        shooterPwr = SetRPM(133.0, shooterPwr);
 
         telemetry.addData("Trigger", 1)  ;
         telemetry.update() ;

@@ -106,7 +106,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     }
 
     public double getRPM(){
-        double waitTime = 50;
+        double waitTime = 50.0;
         ElapsedTime timer = new ElapsedTime ();
         double startFWCount = flywheelShooter.getCurrentPosition();
         while (timer.milliseconds() < waitTime)

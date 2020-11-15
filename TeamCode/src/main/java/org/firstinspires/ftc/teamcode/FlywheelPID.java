@@ -54,7 +54,7 @@ public class FlywheelPID extends LinearOpMode {
         telemetry.update();
         // powershot rpm = 125~
         // high tower rpm = 132~
-        double targetRPM = 50 ;
+        double targetRPM = 50.0 ;
         double flywheelPower = 0.0;
         while (opModeIsActive())
         {
