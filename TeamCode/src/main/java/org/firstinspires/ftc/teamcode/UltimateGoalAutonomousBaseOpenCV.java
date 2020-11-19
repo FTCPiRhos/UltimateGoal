@@ -571,6 +571,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         {
             telemetry.addData("Analysis", pipeline.getAnalysis());
             telemetry.addData( "Position", pipeline.position);
+            telemetry.addData( "Threshold", pipeline.avg1);
             telemetry.update();
             stackHeight = pipeline.getAnalysis();
             if (!stackHeight.equals(StarterStackDeterminationPipeline.RingPosition.NONE))
