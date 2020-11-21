@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import org.firstinspires.ftc.robotcore.internal.camera.delegating.DelegatingCaptureSequence;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -10,6 +11,15 @@ import org.openftc.easyopencv.OpenCvPipeline;
 
 public class StarterStackDeterminationPipeline extends OpenCvPipeline
 {
+
+    public StarterStackDeterminationPipeline( boolean fLeft ) {
+        fLeftPos = fLeft;
+        if ( fLeftPos )
+            REGION1_TOPLEFT_ANCHOR_POINT = new Point( 255, 175 );
+        else
+            REGION1_TOPLEFT_ANCHOR_POINT = new Point( 5, 175);
+    }
+
     /*
      * An enum to define the skystone position
      */
@@ -29,13 +39,13 @@ public class StarterStackDeterminationPipeline extends OpenCvPipeline
     /*
      * The core values which define the location and size of the sample regions
      */
-    static final Point REGION1_TOPLEFT_ANCHOR_POINT = new Point(285,175);
-    static final int REGION_WIDTH = 30;
+    boolean fLeftPos = false;
+    Point REGION1_TOPLEFT_ANCHOR_POINT = null;
+    static final int REGION_WIDTH = 60;
     static final int REGION_HEIGHT = 50;
 
-    final int FOUR_RING_THRESHOLD = 150;
-    final int ONE_RING_THRESHOLD = 135;
-
+    final int FOUR_RING_THRESHOLD = 142;
+    final int ONE_RING_THRESHOLD = 130;
 
 
     /*
@@ -55,12 +65,9 @@ public class StarterStackDeterminationPipeline extends OpenCvPipeline
      *   ------------------------------------
      *
      */
-    Point region1_pointA = new Point(
-            REGION1_TOPLEFT_ANCHOR_POINT.x,
-            REGION1_TOPLEFT_ANCHOR_POINT.y);
-    Point region1_pointB = new Point(
-            REGION1_TOPLEFT_ANCHOR_POINT.x + REGION_WIDTH,
-            REGION1_TOPLEFT_ANCHOR_POINT.y + REGION_HEIGHT);
+
+    Point region1_pointA;
+    Point region1_pointB;
 
     /*
      * Working variables
@@ -102,6 +109,12 @@ public class StarterStackDeterminationPipeline extends OpenCvPipeline
          * buffer. Any changes to the child affect the parent, and the
          * reverse also holds true.
          */
+        region1_pointA = new Point(
+                REGION1_TOPLEFT_ANCHOR_POINT.x,
+                REGION1_TOPLEFT_ANCHOR_POINT.y);
+        region1_pointB = new Point(
+                REGION1_TOPLEFT_ANCHOR_POINT.x + REGION_WIDTH,
+                REGION1_TOPLEFT_ANCHOR_POINT.y + REGION_HEIGHT);
         region1_Cb = Cb.submat(new Rect(region1_pointA, region1_pointB));
     }
 
