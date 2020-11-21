@@ -55,7 +55,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     OpenCvInternalCamera webcam;
     StarterStackDeterminationPipeline pipeline;
 
-    protected void initHardware() {
+    protected void initHardware( boolean fOpenCVLeft ) {
 
         frontLeft = hardwareMap.get(DcMotor.class, "left_front");
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -84,7 +84,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
-        pipeline = new StarterStackDeterminationPipeline();
+        pipeline = new StarterStackDeterminationPipeline( fOpenCVLeft );
         webcam.setPipeline(pipeline);
 
         // We set the viewport policy to optimized view so the preview doesn't appear 90 deg
@@ -563,7 +563,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     }
 
-    protected StarterStackDeterminationPipeline.RingPosition OpenCVRecognizeStack(double milliseconds) {
+    protected StarterStackDeterminationPipeline.RingPosition OpenCVRecognizeStack(double milliseconds ) {
         ElapsedTime runtime = new ElapsedTime();
         StarterStackDeterminationPipeline.RingPosition stackHeight = StarterStackDeterminationPipeline.RingPosition.NONE;
 

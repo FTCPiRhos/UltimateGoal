@@ -9,12 +9,12 @@ public class UltimateGoalAutonomousOpenCV extends UltimateGoalAutonomousBaseOpen
     @Override
     public void runOpMode() {
 
-        initHardware();
+        initHardware(true);
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
-        StarterStackDeterminationPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000);
+        StarterStackDeterminationPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000 );
         telemetry.addData("Object Found: ", objectFound);
         telemetry.update();
 
