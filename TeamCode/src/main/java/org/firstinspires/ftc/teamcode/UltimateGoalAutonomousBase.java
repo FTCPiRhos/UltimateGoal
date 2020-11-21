@@ -32,6 +32,19 @@ import org.openftc.easyopencv.OpenCvInternalCamera;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.List;
+import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.TouchSensor;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
+
 
 @Autonomous(name="Auto Ultimate Goal Base", group="PiRhos")
 //@Disabled
@@ -40,6 +53,10 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
     /* Declare OpMode members. */
 //    HardwarePushbot         robot   = new HardwarePushbot();   // Use a Pushbot's hardware
     protected DcMotor frontLeft, frontRight, backLeft, backRight, FW;
+    BNO055IMU               imu;
+    Orientation             lastAngles = new Orientation();
+    double                  globalAngle, rotation;
+    PIDController           pidRotate, pidDrive;
 
     protected ElapsedTime runtime = new ElapsedTime();
 
@@ -104,10 +121,15 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
         backLeft = hardwareMap.get(DcMotor.class, "leftRear");
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight = hardwareMap.get(DcMotor.class, "rightRear");
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
+
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
+
+        pidRotate = new PIDController( .003, .00003, 0);
+        pidDrive = new PIDController(.05, 0, 0);
 
         pipeline = new StarterStackDeterminationPipeline();
 
@@ -404,8 +426,8 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
 
     }
 
-    protected void moveSideWaysEncoders( double speed, double distance ,double timeoutInMilliseconds){
-        speed = -speed;
+    protected void TurnClockWiseAndAntiClockwise( double speed,
+                                                   double rightdistance, double leftdistance,double timeoutInMilliseconds){
         int newBackLeftTarget;
         int newFrontLeftTarget;
         int newFrontRightTarget;
@@ -415,10 +437,10 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
         if (opModeIsActive()) {
 
             // Determine new target position, and pass to motor controller
-            newFrontLeftTarget = frontLeft.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
-            newFrontRightTarget = frontRight.getCurrentPosition() - (int)(distance * COUNTS_PER_INCH);
-            newBackRightTarget = backRight.getCurrentPosition() + (int)(distance * COUNTS_PER_INCH);
-            newBackLeftTarget = backLeft.getCurrentPosition() - (int)(distance * COUNTS_PER_INCH);
+            newFrontLeftTarget = frontLeft.getCurrentPosition() + (int)(leftdistance * COUNTS_PER_INCH);
+            newFrontRightTarget = frontRight.getCurrentPosition() + (int)(rightdistance * COUNTS_PER_INCH);
+            newBackRightTarget = backRight.getCurrentPosition() + (int)(rightdistance * COUNTS_PER_INCH);
+            newBackLeftTarget = backLeft.getCurrentPosition() + (int)(leftdistance * COUNTS_PER_INCH);
             frontLeft.setTargetPosition(newFrontLeftTarget);
             frontRight.setTargetPosition(newFrontRightTarget);
             backRight.setTargetPosition(newBackRightTarget);
@@ -433,9 +455,9 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
             // reset the timeout time and start motion.
             runtime.reset();
             frontLeft.setPower(speed);
-            frontRight.setPower(-speed);
-            backLeft.setPower(-speed);
+            frontRight.setPower(speed);
             backRight.setPower(speed);
+            backLeft.setPower(speed);
 
             // keep looping while we are still active, and there is time left, and both motors are running.
             // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
@@ -470,6 +492,272 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
         }
 
     }
+
+    protected void moveSideWaysEncoders( double speed, double distance ,double timeoutInMilliseconds) {
+        speed = -speed;
+        int newBackLeftTarget;
+        int newFrontLeftTarget;
+        int newFrontRightTarget;
+        int newBackRightTarget;
+
+        // Ensure that the opmode is still active
+        if (opModeIsActive()) {
+
+            // Determine new target position, and pass to motor controller
+            newFrontLeftTarget = frontLeft.getCurrentPosition() + (int) (distance * COUNTS_PER_INCH);
+            newFrontRightTarget = frontRight.getCurrentPosition() - (int) (distance * COUNTS_PER_INCH);
+            newBackRightTarget = backRight.getCurrentPosition() + (int) (distance * COUNTS_PER_INCH);
+            newBackLeftTarget = backLeft.getCurrentPosition() - (int) (distance * COUNTS_PER_INCH);
+            frontLeft.setTargetPosition(newFrontLeftTarget);
+            frontRight.setTargetPosition(newFrontRightTarget);
+            backRight.setTargetPosition(newBackRightTarget);
+            backLeft.setTargetPosition(newBackLeftTarget);
+
+            // Turn On RUN_TO_POSITION
+            frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            // reset the timeout time and start motion.
+            runtime.reset();
+            frontLeft.setPower(speed);
+            frontRight.setPower(-speed);
+            backLeft.setPower(-speed);
+            backRight.setPower(speed);
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+            // its target position, the motion will stop.  This is "safer" in the event that the robot will
+            // always end the motion as soon as possible.
+            // However, if you require that BOTH motors have finished their moves before the robot continues
+            // onto the next step, use (isBusy() || isBusy()) in the loop test.
+            while (opModeIsActive() && (runtime.milliseconds() < timeoutInMilliseconds) &&
+                    (frontRight.isBusy() && frontLeft.isBusy() && backRight.isBusy() && backLeft.isBusy())) {
+
+                // Display it for the driver.
+                telemetry.addData("Path1", "Running to %7d :%7d", newFrontLeftTarget, newFrontRightTarget, newBackLeftTarget, newBackRightTarget);
+                telemetry.addData("Path2", "Running at %7d :%7d", frontLeft.getCurrentPosition(), frontRight.getCurrentPosition(), backLeft.getCurrentPosition(),
+                        backRight.getCurrentPosition());
+
+                telemetry.update();
+            }
+
+            // Stop all motion;
+            frontLeft.setPower(0);
+            frontRight.setPower(0);
+            backLeft.setPower(0);
+            backRight.setPower(0);
+
+            // Turn off RUN_TO_POSITION
+            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            //  sleep(250);   // optional pause after each move
+        }
+    }
+
+        public void TurnMecanumDriveWithAngle(double targetAngle, double translationPower, double turnPower)
+        {
+            resetAngle();
+            // calculate motor power
+            double ADPower = translationPower * Math.sqrt(2) * 0.5 * (Math.sin(targetAngle) + Math.cos(targetAngle));
+            double BCPower = translationPower * Math.sqrt(2) * 0.5 * (Math.sin(targetAngle) - Math.cos(targetAngle));
+
+            // check if turning power will interfere with normal translation
+            // check ADPower to see if trying to apply turnPower would put motor power over 1.0 or under -1.0
+            double turningScale = Math.max(Math.abs(ADPower + turnPower), Math.abs(ADPower - turnPower));
+            // check BCPower to see if trying to apply turnPower would put motor power over 1.0 or under -1.0
+            turningScale = Math.max(turningScale, Math.max(Math.abs(BCPower + turnPower), Math.abs(BCPower - turnPower)));
+
+            // adjust turn power scale correctly
+            if (Math.abs(turningScale) < 1.0)
+            {
+                turningScale = 1.0;
+            }
+
+            // set the motors, and divide them by turningScale to make sure none of them go over the top, which would alter the translation angle
+/*
+            frontLeft.setPower((ADPower - turningScale) / turningScale);
+            backLeft.setPower((BCPower - turningScale) / turningScale);
+            frontRight.setPower((BCPower + turningScale) / turningScale);
+            backRight.setPower((ADPower + turningScale) / turningScale);
+*/
+            frontLeft.setPower(- turnPower);
+            backLeft.setPower(- turnPower );
+            frontRight.setPower(turnPower);
+            backRight.setPower(turnPower);
+
+            double currentAngle = getAngle();
+            while(Math.abs(currentAngle - targetAngle) > 2.0){
+                if ( currentAngle > targetAngle )
+                    turnPower = -turnPower;
+
+                if(Math.abs(currentAngle - targetAngle) < 15.0){
+                    turnPower = turnPower * 0.3;
+                    turningScale = Math.max(Math.abs(ADPower + turnPower), Math.abs(ADPower - turnPower));
+                    // check BCPower to see if trying to apply turnPower would put motor power over 1.0 or under -1.0
+                    turningScale = Math.max(turningScale, Math.max(Math.abs(BCPower + turnPower), Math.abs(BCPower - turnPower)));
+
+                    // adjust turn power scale correctly
+                    if (Math.abs(turningScale) < 1.0)
+                    {
+                        turningScale = 1.0;
+                    }
+
+                    // set the motors, and divide them by turningScale to make sure none of them go over the top, which would alter the translation angle
+                    frontLeft.setPower(- turnPower);
+                    backLeft.setPower(- turnPower );
+                    frontRight.setPower(turnPower);
+                    backRight.setPower(turnPower);
+
+                }
+
+                currentAngle = getAngle();
+                telemetry.addData("Current Angle= ", currentAngle);
+                telemetry.update();
+
+                sleep(500);
+
+            }
+        }
+
+    public void resetAngle()
+    {
+        lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        globalAngle = 0;
+    }
+
+    public double getAngle()
+    {
+        // We experimentally determined the Z axis is the axis we want to use for heading angle.
+        // We have to process the angle because the imu works in euler angles so the Z axis is
+        // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
+        // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
+
+        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
+
+        if (deltaAngle < -180)
+            deltaAngle += 360;
+        else if (deltaAngle > 180)
+            deltaAngle -= 360;
+
+        globalAngle += deltaAngle;
+
+        telemetry.addData("Global Angle= ", globalAngle);
+        telemetry.update();
+
+        lastAngles = angles;
+
+        return globalAngle;
+
+
+    }
+
+        public void simpleversionoftheturningmethod(double translationAngle2, double translationPower2, double turnPower2)
+        {
+            // calculate motor power
+            double ADPower = translationPower2 * Math.sqrt(2) * 0.5 * (Math.sin(translationAngle2) + Math.cos(translationAngle2));
+            double BCPower = translationPower2 * Math.sqrt(2) * 0.5 * (Math.sin(translationAngle2) - Math.cos(translationAngle2));
+
+            // set the motors
+            frontLeft.setPower(ADPower);
+            backLeft.setPower(BCPower);
+            frontRight.setPower(BCPower);
+            backRight.setPower(ADPower);
+        }
+
+        public void rotateusingPID(int degrees, double power)
+        {
+        // restart imu angle tracking.
+        resetAngle();
+
+        // if degrees > 359 we cap at 359 with same sign as original degrees.
+        if (Math.abs(degrees) > 359) degrees = (int) Math.copySign(359, degrees);
+
+        // start pid controller. PID controller will monitor the turn angle with respect to the
+        // target angle and reduce power as we approach the target angle. This is to prevent the
+        // robots momentum from overshooting the turn after we turn off the power. The PID controller
+        // reports onTarget() = true when the difference between turn angle and target angle is within
+        // 1% of target (tolerance) which is about 1 degree. This helps prevent overshoot. Overshoot is
+        // dependant on the motor and gearing configuration, starting power, weight of the robot and the
+        // on target tolerance. If the controller overshoots, it will reverse the sign of the output
+        // turning the robot back toward the setpoint value.
+
+        pidRotate.reset();
+        pidRotate.setSetpoint(degrees);
+        pidRotate.setInputRange(0, degrees);
+        pidRotate.setOutputRange(0, power);
+        pidRotate.setTolerance(1);
+        pidRotate.enable();
+
+        // getAngle() returns + when rotating counter clockwise (left) and - when rotating
+        // clockwise (right).
+
+        // rotate until turn is completed.
+
+        if (degrees < 0)
+        {
+            // On right turn we have to get off zero first.
+            while (opModeIsActive() && getAngle() == 0)
+            {
+                frontLeft.setPower(power);
+                backLeft.setPower(power);
+                frontRight.setPower(-power);
+                backRight.setPower(-power);
+                sleep(100);
+            }
+
+            do
+            {
+                power = pidRotate.performPID(getAngle()); // power will be - on right turn.
+                frontLeft.setPower(-power);
+                backLeft.setPower(-power);
+                frontRight.setPower(power);
+                backRight.setPower(power);
+            } while (opModeIsActive() && !pidRotate.onTarget());
+        }
+        else    // left turn.
+            do
+            {
+                power = pidRotate.performPID(getAngle()); // power will be + on left turn.
+                frontLeft.setPower(-power);
+                backLeft.setPower(-power);
+                frontRight.setPower(power);
+                backRight.setPower(power);
+            } while (opModeIsActive() && !pidRotate.onTarget());
+
+        // turn the motors off.
+        frontLeft.setPower(0);
+        backLeft.setPower(0);
+        frontRight.setPower(0);
+        backRight.setPower(0);
+
+        rotation = getAngle();
+
+        // wait for rotation to stop.
+        sleep(500);
+
+        // reset angle tracking on new heading.
+        resetAngle();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
