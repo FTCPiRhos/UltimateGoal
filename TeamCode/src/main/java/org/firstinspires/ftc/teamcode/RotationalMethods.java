@@ -286,68 +286,7 @@ public class RotationalMethods extends LinearOpMode
         resetAngle();
     }
 
-    public void gyrorotate(int degrees, double power)
-    {
-        double  leftPower, rightPower;
-        int     targetAngle;
 
-        // reset gyro to zero.
-        gyro.resetZAxisIntegrator();
-
-        // Gyro returns 0->359 when rotating counter clockwise (left) and 359->0 when rotating
-        // clockwise (right).
-
-        if (degrees < 0)
-        {   // turn right.
-            leftPower = power;
-            rightPower = -power;
-            targetAngle = 360 + degrees;    // degrees is - for right turn.
-        }
-        else if (degrees > 0)
-        {   // turn left.
-            leftPower = -power;
-            rightPower = power;
-            targetAngle = degrees;
-        }
-        else return;
-
-        // set power to rotate.
-        leftMotor.setPower(leftPower);
-        rightMotor.setPower(rightPower);
-
-        // rotate until turn is completed.
-        if (degrees < 0)
-        {
-            // On right turn we have to get off zero first.
-            while (opModeIsActive() && gyro.getHeading() == 0)
-            {
-                telemetry.addData("gyro heading", gyro.getHeading());
-                telemetry.update();
-                idle();
-            }
-
-            while (opModeIsActive() && gyro.getHeading() > targetAngle)
-            {
-                telemetry.addData("gyro heading", gyro.getHeading());
-                telemetry.update();
-                idle();
-            }
-        }
-        else
-            while (opModeIsActive() && gyro.getHeading() < targetAngle)
-            {
-                telemetry.addData("gyro heading", gyro.getHeading());
-                telemetry.update();
-                idle();
-            }
-
-        // turn the motors off.
-        rightMotor.setPower(0);
-        leftMotor.setPower(0);
-
-        // Reset gyro heading to zero on new direction we are now pointing.
-        gyro.resetZAxisIntegrator();
-    }
 
     void composeTelemetry() {
 
