@@ -212,7 +212,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         return (curPower);
     }
 
-    public void moveWPID (double targetXInches, double targetYInches, double rightMul){
+    public void moveWPID (double targetXInches, double targetYInches){
 
 
         frontLeft.setPower(0);
@@ -326,8 +326,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
             curPowerLF = usePwrY + usePwrX;
             curPowerLB = usePwrY - usePwrX;
-            curPowerRF = rightMul * (usePwrY - usePwrX);
-            curPowerRB = rightMul * (usePwrY + usePwrX);
+            curPowerRF = usePwrY - usePwrX;
+            curPowerRB = usePwrY + usePwrX;
 
             backRight.setPower(curPowerRB);
             backLeft.setPower(curPowerLB);

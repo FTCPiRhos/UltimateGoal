@@ -2,8 +2,8 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name="Auto Blue Left", group="PiRhos")
-public class Auto_Blue_Left extends UltimateGoalAutonomousBaseOpenCV{
+@Autonomous(name="Auto Red Left", group="PiRhos")
+public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
 
     @Override
     public void runOpMode() {
@@ -13,7 +13,7 @@ public class Auto_Blue_Left extends UltimateGoalAutonomousBaseOpenCV{
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-        double shooterPwr = -0.5157 ;
+        double shooterPwr = -0.5157;
 
         // Find number of rings + print for drivers
         StarterStackDeterminationPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000 );
@@ -24,20 +24,20 @@ public class Auto_Blue_Left extends UltimateGoalAutonomousBaseOpenCV{
         // Drop off the wobble goal to specific box + align to goal
         if ( objectFound.equals(StarterStackDeterminationPipeline.RingPosition.NONE) ){
             flywheelShooter.setPower(shooterPwr);
-            moveWPID(12, -60);
+            moveWPID(-36, -60);
             sleep(500);
         }
         else if ( objectFound.equals(StarterStackDeterminationPipeline.RingPosition.ONE) ){
             flywheelShooter.setPower(shooterPwr);
             moveWPID(-12, -84);
             sleep(500);
-            moveWPID(24, 20);
+            moveWPID(-24, 20);
         }
         else if ( objectFound.equals(StarterStackDeterminationPipeline.RingPosition.FOUR)){
             flywheelShooter.setPower(shooterPwr);
-            moveWPID(12, -108);
+            moveWPID(-36, -108);
             sleep(500);
-            moveWPID(-6, 44);
+            moveWPID(6, 44);
         }
 
         // Shoot trigger
@@ -57,7 +57,7 @@ public class Auto_Blue_Left extends UltimateGoalAutonomousBaseOpenCV{
         sleep(2500);
 
         // Park on white line
-        moveWPID(-12, -12);
-
+        moveWPID(12, -12);
     }
 }
+
