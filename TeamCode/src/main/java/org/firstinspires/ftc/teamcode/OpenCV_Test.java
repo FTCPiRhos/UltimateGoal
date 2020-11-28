@@ -135,46 +135,27 @@ public class OpenCV_Test extends UltimateGoalAutonomousBaseOpenCV
                 double left_higher_value = LEFT_OBJECT_X_POS_HIGHER + 40;
                 double right_higher_value = RIGHT_OBJECT_X_POS_HIGHER + 40;
 
+                if ( object_x_pos[0] > object_x_pos[1] && objectFound == TARGET_OBJECT_TO_FIND ){
+                    double temp = object_x_pos[1];
+                    object_x_pos[1] = object_x_pos[0];
+                    object_x_pos[0] = temp;
+                }
+
                 if ( objectFound == TARGET_OBJECT_TO_FIND ){
-                    if (object_x_pos[0] < object_x_pos[1]){
-                        if ( object_x_pos[0] < LEFT_OBJECT_X_POS_LOWER && object_x_pos[1] < RIGHT_OBJECT_X_POS_LOWER ) {
-                            if ( object_x_pos[0] < left_lower_value && object_x_pos[1] < right_lower_value )
-                                moveSidewayForMilliseconds(0.4, 1000);
-                            else
-                                moveSidewayForMilliseconds(0.2, 600);
-                            telemetry.addLine("left move");
-                            }
-                        else if ( object_x_pos[0] > LEFT_OBJECT_X_POS_HIGHER && object_x_pos[1] > RIGHT_OBJECT_X_POS_HIGHER ) {
-                            if ( object_x_pos[0] > left_higher_value && object_x_pos[1] > right_higher_value )
-                                moveSidewayForMilliseconds(-0.4, 1000);
-                            else
-                                moveSidewayForMilliseconds(-0.2, 600);
-                            telemetry.addLine("right move");
-                        }
-                        else {
-                            stop();
-                            telemetry.addLine("stopped");
-                        }
+                    if ( object_x_pos[0] < LEFT_OBJECT_X_POS_LOWER && object_x_pos[1] < RIGHT_OBJECT_X_POS_LOWER ) {
+                        if ( object_x_pos[0] < left_lower_value && object_x_pos[1] < right_lower_value )
+                            moveSidewayForMilliseconds(0.4, 1000);
+                        else
+                            moveSidewayForMilliseconds(0.2, 600);
+                    }
+                    else if ( object_x_pos[0] > LEFT_OBJECT_X_POS_HIGHER && object_x_pos[1] > RIGHT_OBJECT_X_POS_HIGHER ) {
+                        if ( object_x_pos[0] > left_higher_value && object_x_pos[1] > right_higher_value )
+                            moveSidewayForMilliseconds(-0.4, 1000);
+                        else
+                            moveSidewayForMilliseconds(-0.2, 600);
                     }
                     else {
-                        if ( object_x_pos[0] < RIGHT_OBJECT_X_POS_LOWER && object_x_pos[1] < LEFT_OBJECT_X_POS_LOWER ) {
-                            if ( object_x_pos[0] < right_lower_value && object_x_pos[1] < left_lower_value )
-                                moveSidewayForMilliseconds(0.4, 1000);
-                            else
-                                moveSidewayForMilliseconds(0.2, 600);
-                            telemetry.addLine("LEFT MOVE");
-                        }
-                        else if ( object_x_pos[0] > RIGHT_OBJECT_X_POS_HIGHER && object_x_pos[1] > LEFT_OBJECT_X_POS_HIGHER ) {
-                            if ( object_x_pos[0] > right_higher_value && object_x_pos[1] > left_higher_value )
-                                moveSidewayForMilliseconds(-0.4, 1000);
-                            else
-                                moveSidewayForMilliseconds(-0.2, 600);
-                            telemetry.addLine("RIGHT MOVE");
-                        }
-                        else {
-                            stop();
-                            telemetry.addLine("STOPPED");
-                        }
+                        stop();
                     }
                 }
             }
