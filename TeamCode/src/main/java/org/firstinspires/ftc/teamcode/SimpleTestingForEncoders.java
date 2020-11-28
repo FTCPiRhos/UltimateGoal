@@ -21,7 +21,7 @@ public class SimpleTestingForEncoders extends RotationalMethods {
 
         //String objectFound = TFRecognizeStack(3000);
         //telemetry.addData("Object Found: ", objectFound);
-        rotate(90, 0.3);
+        rotate(60, 0.3);
 
 
 
