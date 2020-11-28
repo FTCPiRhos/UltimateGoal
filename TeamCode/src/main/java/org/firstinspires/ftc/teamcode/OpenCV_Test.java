@@ -101,7 +101,7 @@ public class OpenCV_Test extends UltimateGoalAutonomousBaseOpenCV
             // we're not doing anything else
             sleep(100);
 
-            initHardware();
+            initHardware( false );
 
             // Figure out which stones the pipeline detected, and print them to telemetry
             ArrayList<StoneOrientationAnalysisPipeline.AnalyzedStone> stones = pipeline.getDetectedStones();

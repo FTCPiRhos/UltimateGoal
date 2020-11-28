@@ -10,7 +10,6 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.GyroSensor;
@@ -23,8 +22,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.firstinspires.ftc.robotcore.external.navigation.Position;
-import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 
 import java.util.Locale;
 
@@ -217,9 +214,11 @@ public class RotationalMethods extends LinearOpMode
     /**
      * Rotate left or right the number of degrees. Does not support turning more than 180 degrees.
      * @param degrees Degrees to turn, + is left - is right
+     * @return
      */
-    public void rotate(int degrees, double power)
+    public boolean rotate(int degrees, double power)
     {
+
         double  leftPower, rightPower;
 
         // restart imu movement tracking.
@@ -238,7 +237,7 @@ public class RotationalMethods extends LinearOpMode
             leftPower = power;
             rightPower = -power;
         }
-        else return;
+        else return false;
 
         // set power to rotate.
         frontLeft.setPower(leftPower);
@@ -257,10 +256,26 @@ public class RotationalMethods extends LinearOpMode
 */
         while (opModeIsActive() && Math.abs( getAngle() - degrees ) > 2.0 ) {
             sleep(10);
-//            frontRight.setPower(power - 0.2);
-//            backLeft.setPower(power - 0.2);
-//            frontLeft.setPower(power - 0.2);
-//            backRight.setPower(power - 0.2);
+            // if( rotated 60 percent), reduce the speed of the wheels by half.
+
+            double AnglePrecToSlowDown = 0.8;
+            if ( degrees <= 60.0 )
+                AnglePrecToSlowDown =0.6;
+
+            if(getAngle() > AnglePrecToSlowDown * degrees ) {
+                double diff = degrees - getAngle();
+                double modifier = 0.2 + 0.3 * ( diff/ degrees );
+                frontRight.setPower(rightPower * modifier );
+                backLeft.setPower(leftPower * modifier);
+                frontLeft.setPower(leftPower * modifier);
+                backRight.setPower(rightPower * modifier);
+
+
+
+            }
+
+
+
         }
 
         // turn the motors off.
@@ -284,6 +299,7 @@ public class RotationalMethods extends LinearOpMode
 
         // reset angle tracking on new heading.
         resetAngle();
+        return false;
     }
 
 
