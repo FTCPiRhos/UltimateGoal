@@ -296,7 +296,7 @@ public class OpenCVRGB extends AutonBaseWebcamTest
                         greenCount += green ;
                         blueCount += blue ;
 
-                        boolean isOrange = ((red > (blue * R_MINUS_B_THRESHOLD/100.0)) &&
+                        boolean isOrange = ((red > (blue * R_MINUS_B_THRESHOLD/100.00)) &&
                                 ((green > (blue * G_MINUS_B_THRESHOLD)/100.0)));
 
                         if (isOrange) {
