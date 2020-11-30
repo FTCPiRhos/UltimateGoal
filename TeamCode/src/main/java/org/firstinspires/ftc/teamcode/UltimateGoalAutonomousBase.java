@@ -112,15 +112,15 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
          */
 //        robot.init(hardwareMap);
 
-        frontLeft = hardwareMap.get(DcMotor.class, "leftFront");
+        frontLeft = hardwareMap.get(DcMotor.class, "left_front");
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        frontRight = hardwareMap.get(DcMotor.class, "rightFront");
+        frontRight = hardwareMap.get(DcMotor.class, "right_front");
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        backLeft = hardwareMap.get(DcMotor.class, "leftRear");
+        backLeft = hardwareMap.get(DcMotor.class, "left_back");
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        backRight = hardwareMap.get(DcMotor.class, "rightRear");
+        backRight = hardwareMap.get(DcMotor.class, "right_back");
         imu = hardwareMap.get(BNO055IMU.class, "imu");
 
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -159,6 +159,7 @@ public abstract class UltimateGoalAutonomousBase extends LinearOpMode {
         telemetry.addData("Status", "Initialization Done");
         telemetry.update();
     }
+
 
     protected void moveSideway(double speed, int leftPos, int rightPos) {
 
