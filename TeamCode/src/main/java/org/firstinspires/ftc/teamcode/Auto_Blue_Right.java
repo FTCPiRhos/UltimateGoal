@@ -26,12 +26,13 @@ public class Auto_Blue_Right extends UltimateGoalAutonomousBaseOpenCV{
             flywheelShooter.setPower(shooterPwr);
             moveWPID(36, -60);
             sleep(500);
+            moveWPID(-6, 0);
         }
         else if ( objectFound.equals(StarterStackDeterminationPipeline.RingPosition.ONE) ){
             flywheelShooter.setPower(shooterPwr);
             moveWPID(12, -84);
             sleep(500);
-            moveWPID(24, 20);
+            moveWPID(18, 20);
         }
         else if ( objectFound.equals(StarterStackDeterminationPipeline.RingPosition.FOUR)){
             flywheelShooter.setPower(shooterPwr);
