@@ -16,25 +16,25 @@ public class Auto_Blue_Left extends UltimateGoalAutonomousBaseOpenCV{
         double shooterPwr = -0.5157 ;
 
         // Find number of rings + print for drivers
-        StarterStackDeterminationPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000 );
+        OpenCVTestPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000 );
         // sleep(30000);
         telemetry.addData("Object Found: ", objectFound);
         telemetry.update();
 
         // Drop off the wobble goal to specific box + align to goal
-        if ( objectFound.equals(StarterStackDeterminationPipeline.RingPosition.NONE) ){
+        if ( objectFound.equals(OpenCVTestPipeline.RingPosition.NONE) ){
             flywheelShooter.setPower(shooterPwr);
             moveWPID(12, -60);
             sleep(500);
             moveWPID(-6, 0);
         }
-        else if ( objectFound.equals(StarterStackDeterminationPipeline.RingPosition.ONE) ){
+        else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.ONE) ){
             flywheelShooter.setPower(shooterPwr);
             moveWPID(-12, -84);
             sleep(500);
             moveWPID(18, 20);
         }
-        else if ( objectFound.equals(StarterStackDeterminationPipeline.RingPosition.FOUR)){
+        else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.FOUR)){
             flywheelShooter.setPower(shooterPwr);
             moveWPID(12, -108);
             sleep(500);
