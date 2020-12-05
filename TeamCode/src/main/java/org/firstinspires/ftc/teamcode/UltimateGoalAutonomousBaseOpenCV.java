@@ -19,6 +19,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+import org.firstinspires.ftc.teamcode.vision.OpenCVCrCb;
 import org.firstinspires.ftc.teamcode.vision.StarterStackDeterminationExample;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -53,7 +54,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     //OpenCV related initalization
     OpenCvInternalCamera webcam;
-    StarterStackDeterminationPipeline pipeline;
+    StarterStackDeterminationPipeline old_pipeline;
+    OpenCVTestPipeline pipeline;
 
     protected void initHardware( boolean fOpenCVLeft ) {
 
@@ -86,7 +88,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
-        pipeline = new StarterStackDeterminationPipeline( fOpenCVLeft );
+        old_pipeline = new StarterStackDeterminationPipeline( fOpenCVLeft );
+        pipeline = new OpenCVTestPipeline( fOpenCVLeft );
         webcam.setPipeline(pipeline);
 
         // We set the viewport policy to optimized view so the preview doesn't appear 90 deg
@@ -565,18 +568,16 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     }
 
-    protected StarterStackDeterminationPipeline.RingPosition OpenCVRecognizeStack(double milliseconds ) {
+    protected OpenCVTestPipeline.RingPosition OpenCVRecognizeStack(double milliseconds ) {
         ElapsedTime runtime = new ElapsedTime();
-        StarterStackDeterminationPipeline.RingPosition stackHeight = StarterStackDeterminationPipeline.RingPosition.NONE;
+        OpenCVTestPipeline.RingPosition stackHeight = OpenCVTestPipeline.RingPosition.NONE;
 
         while (opModeIsActive() && runtime.milliseconds() < milliseconds)
         {
             telemetry.addData("Analysis", pipeline.getAnalysis());
-            telemetry.addData( "Position", pipeline.position);
-            telemetry.addData( "Threshold", pipeline.avg1);
             telemetry.update();
             stackHeight = pipeline.getAnalysis();
-            if (!stackHeight.equals(StarterStackDeterminationPipeline.RingPosition.NONE))
+            if (!stackHeight.equals(OpenCVTestPipeline.RingPosition.NONE))
                 break;
 
             // Don't burn CPU cycles busy-looping in this sample

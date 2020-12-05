@@ -16,7 +16,7 @@ public class Auto_Blue_Right extends UltimateGoalAutonomousBaseOpenCV{
         double shooterPwr = -0.5157;
 
         // Find number of rings + print for drivers
-        StarterStackDeterminationPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000 );
+        OpenCVTestPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000 );
         // sleep(30000);
         telemetry.addData("Object Found: ", objectFound);
         telemetry.update();
