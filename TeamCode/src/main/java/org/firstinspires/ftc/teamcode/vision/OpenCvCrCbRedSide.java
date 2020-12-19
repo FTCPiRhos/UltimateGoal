@@ -18,9 +18,9 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvInternalCamera;
 import org.openftc.easyopencv.OpenCvPipeline;
 
-@Autonomous(name="OpenCV CrCb", group="PiRhos")
+@Autonomous(name="OpenCV CrCb Red", group="PiRhos")
 //@Disabled
-public class OpenCVCrCb extends AutonBaseWebcamTest
+public class OpenCvCrCbRedSide extends AutonBaseWebcamTest
 {
     OpenCVTestPipeline pipeline;
     OpenCvCamera webcam;
