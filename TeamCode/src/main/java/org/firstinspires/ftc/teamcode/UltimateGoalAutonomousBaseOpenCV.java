@@ -130,9 +130,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
 
     public double SetRPM (double targetRPM, double motorPower){
-        double kp = 0.00025;
+        double kp = 0.000025;
         double ki = 0.0000025 ;
-        double kd = 0.0000001 ;
+        double kd = 0.00000001 ;
         double errorRPM = targetRPM + getRPM();
         double curPower = motorPower;
         double lastErr = 0 ;
@@ -164,7 +164,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
             if (Math.abs(errorRPM) <  0.5 ){
                 inLockCount += 1 ;
-                if (inLockCount > 5) {
+                if (inLockCount > 10) {
                     return (curPower);
                 }
             }
