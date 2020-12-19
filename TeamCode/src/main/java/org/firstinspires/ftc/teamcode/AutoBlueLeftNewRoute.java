@@ -21,18 +21,19 @@ public class AutoBlueLeftNewRoute extends UltimateGoalAutonomousBaseOpenCV{
         // sleep(30000);
         telemetry.addData("Object Found: ", objectFound);
         telemetry.update();
-        //set flywheel power at beginning to speed up set time
+
+        // Set flywheel power at beginning to speed up set time
         flywheelShooter.setPower(shooterPwr);
-        // move fwd and left to shoot 3 shots
+
+        // Move fwd and left to shoot 3 shots
         moveWPID(0,-54);
         moveWPID(-6,0);
 
-        for (int i = 0 ; i<=20 ; i++) {
-            shooterPwr = SetRPM(128, shooterPwr);
-            telemetry.addData("Trigger", 1);
-            telemetry.update();
-            sleep(2500);
-        }
+        shooterPwr = SetRPM(128, shooterPwr);
+        telemetry.addData("Trigger", 1);
+        telemetry.update();
+        sleep(2500);
+
         shooterPwr = SetRPM(128, shooterPwr);
         telemetry.addData("Trigger", 2)  ;
         telemetry.update() ;
@@ -42,31 +43,23 @@ public class AutoBlueLeftNewRoute extends UltimateGoalAutonomousBaseOpenCV{
         telemetry.addData("Trigger", 3)  ;
         telemetry.update() ;
         sleep(2500);
+
         // Drop off the wobble goal to specific box + align to goal
-        if ( objectFound.equals(OpenCVTestPipeline.RingPosition.NONE) || true){
-            // flywheelShooter.setPower(shooterPwr);
+        if ( objectFound.equals(OpenCVTestPipeline.RingPosition.NONE) ){
             moveWPID(6, -6);
             sleep(500);
-
+            moveWPID(-20, -12);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.ONE) ){
-            // flywheelShooter.setPower(shooterPwr);
             moveWPID(-12, -84);
             sleep(500);
-            moveWPID(18, 20);
+            moveWPID(-2, 8);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.FOUR)){
-            // flywheelShooter.setPower(shooterPwr);
             moveWPID(12, -108);
             sleep(500);
-            moveWPID(-6, 44);
+            moveWPID(-26, 32);
         }
-
-        // Shoot trigger
-
-
-        // Park on white line
-        moveWPID(-20, -12);
 
     }
 }

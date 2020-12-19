@@ -261,10 +261,10 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         double lastYError = 0;
         double curPowerX = 0;
         double curPowerY = 0;
-        double capPowerX = .35;
-        double capPowerY = .35;
-        double minPowerX = .2;
-        double minPowerY = .1;
+        double capPowerX = .3;
+        double capPowerY = .3;
+        double minPowerX = 0;
+        double minPowerY = 0;
         double deltaKX = 1;
         double deltaKY = 1;
         boolean firstPass = true ;
@@ -640,12 +640,11 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         protected void CommonMethodForArm() {
 
-            ArmEncoders(0.4, -0.88, 10000);
+            ArmEncoders(0.5, -0.88, 10000);
             armServo.setPosition(0);
             moveWPID(8, 0);
-            ArmEncoders(0.4, 0.88, 10000);
+            ArmEncoders(0.7, 1.3, 10000);
             armServo.setPosition(1);
-            sleep(1000);
 
 
         }
