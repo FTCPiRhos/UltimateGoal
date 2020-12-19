@@ -40,7 +40,8 @@ import java.util.List;
 public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     /* Declare OpMode members. */
-    protected DcMotor frontLeft, frontRight, backLeft, backRight, flywheelShooter;
+    protected DcMotor frontLeft, frontRight, backLeft, backRight, flywheelShooter, armMotor;
+    protected Servo armServo = null;
 
     protected ElapsedTime runtime = new ElapsedTime();
 
@@ -69,6 +70,10 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight = hardwareMap.get(DcMotor.class, "right_back");
+        armServo = hardwareMap.get(Servo.class,"arm_servo");
+        armMotor = hardwareMap.get(DcMotor.class, "arm_motor");
+       armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -81,7 +86,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         backLeft.setDirection((DcMotor.Direction.REVERSE));
         frontRight.setDirection(DcMotor.Direction.FORWARD);
         backRight.setDirection(DcMotor.Direction.FORWARD);
-
+        armServo.setDirection(Servo.Direction.FORWARD);
+        armMotor.setDirection(DcMotor.Direction.FORWARD);
         flywheelShooter.setDirection(DcMotorSimple.Direction.REVERSE);
 
 
@@ -585,5 +591,67 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         }
         return stackHeight;
     }
+    protected void ArmEncoders(double speed, double distance, int timeoutInMilliseconds) {
+        int newArmTarget;
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-}
+        // Ensure that the opmode is still active
+        if (opModeIsActive()) {
+
+            // Determine new target position, and pass to motor controller
+
+            newArmTarget = armMotor.getCurrentPosition() + (int) (distance * COUNTS_PER_INCH);
+            armMotor.setTargetPosition(newArmTarget);
+
+            // Turn On RUN_TO_POSITION
+            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            // reset the timeout time and start motion.
+            runtime.reset();
+            armMotor.setPower(speed);
+
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+            // its target position, the motion will stop.  This is "safer" in the event that the robot will
+            // always end the motion as soon as possible.
+            // However, if you require that BOTH motors have finished their moves before the robot continues
+            // onto the next step, use (isBusy() || isBusy()) in the loop test.
+            while (opModeIsActive() && (runtime.milliseconds() < timeoutInMilliseconds) &&
+                    (armMotor.isBusy())) {
+
+                // Display it for the driver.
+                telemetry.addData("Path1", "Running to %7d", newArmTarget);
+                telemetry.addData("Path2", "Running at %7d", armMotor.getCurrentPosition());
+
+                telemetry.update();
+            }
+
+            // Stop all motion;
+            armMotor.setPower(0);
+
+
+            // Turn off RUN_TO_POSITION
+            armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
+            //  sleep(250);   // optional pause after each move
+        }
+    }
+
+        protected void CommonMethodForArm() {
+
+            ArmEncoders(0.4, -0.88, 10000);
+            armServo.setPosition(0);
+            moveWPID(8, 0);
+            ArmEncoders(0.4, 0.88, 10000);
+            armServo.setPosition(1);
+            sleep(1000);
+
+
+        }
+
+        }
+
+
+
+

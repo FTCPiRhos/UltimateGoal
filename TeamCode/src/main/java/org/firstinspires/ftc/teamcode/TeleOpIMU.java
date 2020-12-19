@@ -13,7 +13,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 
 @TeleOp(name="TeleOpIMU", group="PiRho")
-public class TeleOpIMU extends RotationalMethods {
+public class TeleOpIMU extends ArmClaw {
 
     @Override
     public void runOpMode() {
@@ -27,7 +27,7 @@ public class TeleOpIMU extends RotationalMethods {
         waitForStart();
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            getAngle();
+           TelemetryForClaw();
         }
     }
 }
