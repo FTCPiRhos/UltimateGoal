@@ -72,8 +72,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         backRight = hardwareMap.get(DcMotor.class, "right_back");
         armServo = hardwareMap.get(Servo.class,"arm_servo");
         armMotor = hardwareMap.get(DcMotor.class, "arm_motor");
-       armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -640,7 +640,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         protected void CommonMethodForArm() {
 
-            ArmEncoders(0.5, -0.88, 10000);
+            ArmEncoders(0.7, -0.88, 10000);
             armServo.setPosition(0);
             moveWPID(8, 0);
             ArmEncoders(0.7, 1.3, 10000);
