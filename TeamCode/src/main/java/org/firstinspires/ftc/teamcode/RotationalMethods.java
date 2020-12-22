@@ -188,6 +188,8 @@ public class RotationalMethods extends LinearOpMode
 
     }
 
+
+
     /**
      * See if we are moving in a straight line and if not return a power correction value.
      * @return Power adjustment, + is adjust left - is adjust right.
