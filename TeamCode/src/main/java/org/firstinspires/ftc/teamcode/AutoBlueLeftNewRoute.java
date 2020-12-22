@@ -23,16 +23,16 @@ public class AutoBlueLeftNewRoute extends UltimateGoalAutonomousBaseOpenCV{
         telemetry.update();
         //set flywheel power at beginning to speed up set time
         flywheelShooter.setPower(shooterPwr);
-        // move fwd and left to shoot 3 shots
+        // move fwd and right to shoot 3 shots
         moveWPID(0,-54);
         moveWPID(-6,0);
 
-        for (int i = 0 ; i<=20 ; i++) {
-            shooterPwr = SetRPM(128, shooterPwr);
-            telemetry.addData("Trigger", 1);
-            telemetry.update();
-            sleep(2500);
-        }
+
+        shooterPwr = SetRPM(128, shooterPwr);
+        telemetry.addData("Trigger", 1);
+        telemetry.update();
+        sleep(2500);
+
         shooterPwr = SetRPM(128, shooterPwr);
         telemetry.addData("Trigger", 2)  ;
         telemetry.update() ;
@@ -43,7 +43,7 @@ public class AutoBlueLeftNewRoute extends UltimateGoalAutonomousBaseOpenCV{
         telemetry.update() ;
         sleep(2500);
         // Drop off the wobble goal to specific box + align to goal
-        if ( objectFound.equals(OpenCVTestPipeline.RingPosition.NONE) || true){
+        if ( objectFound.equals(OpenCVTestPipeline.RingPosition.NONE)){
             // flywheelShooter.setPower(shooterPwr);
             moveWPID(6, -6);
             sleep(500);
