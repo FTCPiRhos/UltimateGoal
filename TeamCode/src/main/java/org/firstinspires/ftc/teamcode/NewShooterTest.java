@@ -76,7 +76,7 @@ public class NewShooterTest extends LinearOpMode {
                 flywheelPower = SetRPM(targetRPM, flywheelPower);
                 flywheelServo.setPosition(0.5);
                 sleep(500);
-                flywheelServo.setPosition(0.9375);
+                flywheelServo.setPosition(1);
                 sleep(2000) ;
             }
                 sleep(1000);
