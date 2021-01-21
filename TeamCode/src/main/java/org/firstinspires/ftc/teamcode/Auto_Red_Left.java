@@ -25,37 +25,37 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
         flywheelShooter.setPower(shooterPwr);
 
         // Move fwd and left to shoot 3 shots
-        moveWPID(0,-54);
-        moveWPID(-6,0);
+        moveWPID(6,-54);
+        moveWPID(-12,0);
 
-        shooterPwr = SetRPM(128, shooterPwr);
-        telemetry.addData("Trigger", 1);
-        telemetry.update();
-        sleep(2500);
+        shooterPwr = SetRPM(127, shooterPwr);
+        shooterTrigger();
+        sleep(1500);
 
-        shooterPwr = SetRPM(128, shooterPwr);
-        telemetry.addData("Trigger", 2)  ;
-        telemetry.update() ;
-        sleep(2500);
+        shooterPwr = SetRPM(127, shooterPwr);
+        shooterTrigger();
+        sleep(1500);
 
-        shooterPwr = SetRPM(128, shooterPwr);
-        telemetry.addData("Trigger", 3)  ;
-        telemetry.update() ;
-        sleep(2500);
+        shooterPwr = SetRPM(127, shooterPwr);
+        shooterTrigger();
+        sleep(1500);
 
         // Drop off the wobble goal to specific box + align to goal
         if ( objectFound.equals(OpenCVTestPipeline.RingPosition.NONE) ){
             moveWPID(-6, -6);
+            CommonMethodForArm();
             sleep(500);
             moveWPID(20, -12);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.ONE) ){
             moveWPID(18, -30);
+            CommonMethodForArm();
             sleep(500);
             moveWPID(-4, 12);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.FOUR)){
             moveWPID(-6, -54);
+            CommonMethodForArm();
             sleep(500);
             moveWPID(20, 36);
         }

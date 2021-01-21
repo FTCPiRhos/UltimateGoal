@@ -41,7 +41,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     /* Declare OpMode members. */
     protected DcMotor frontLeft, frontRight, backLeft, backRight, flywheelShooter, armMotor;
-    protected Servo armServo = null;
+    protected Servo armServo, flywheelServo;
 
     protected ElapsedTime runtime = new ElapsedTime();
 
@@ -82,6 +82,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         flywheelShooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flywheelShooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        flywheelServo = hardwareMap.get(Servo.class, "flywheel_servo");
+
+
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
         backLeft.setDirection((DcMotor.Direction.REVERSE));
         frontRight.setDirection(DcMotor.Direction.FORWARD);
@@ -116,51 +119,71 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         telemetry.update();
     }
 
-    public double getRPM(){
-        double waitTime = 50.0;
+    public double getRPM(double waitTime ){
         ElapsedTime timer = new ElapsedTime ();
         double startFWCount = flywheelShooter.getCurrentPosition();
         while (timer.milliseconds() < waitTime)
         {
         }
 
-
+        double timeVar = (250.0/waitTime);
         double deltaFW = flywheelShooter.getCurrentPosition() - startFWCount;
 
-        double RPM = 5 * (deltaFW * 240)/537.6;
+        double RPM = timeVar * (deltaFW * 240)/537.6;
 
         return RPM;
 
     }
 
 
-
     public double SetRPM (double targetRPM, double motorPower){
-        double kp = 0.000025;
-        double ki = 0.0000025 ;
-        double kd = 0.00000001 ;
-        double errorRPM = targetRPM + getRPM();
+
+        double time_step = 50.0 ;
+
+        double time_step_mul = time_step / 50.0 ;
+
+        double kp = 0.0025  * 1 ;
+        double ki = (0.0025/50.0) * 0.1 * 1 ;
+        double kd = 0.00025  * 1 ;
+
+        ElapsedTime timer = new ElapsedTime();
+        timer.reset();
+
+        double errorRPM = targetRPM + getRPM(time_step);
         double curPower = motorPower;
         double lastErr = 0 ;
         double integralErr = 0 ;
-        ElapsedTime timer = new ElapsedTime();
         int inLockCount = 0 ;
-        while (Math.abs(errorRPM) > 1) {
+        int loop_count = 0 ;
+        while (loop_count < 1000) {
             double deltaError = errorRPM - lastErr;
-            if (Math.abs(errorRPM)<15) integralErr += errorRPM * timer.time();
-            double derivative = deltaError/timer.time();
-
+            lastErr = errorRPM ;
+            double time_int = timer.time() ;
             timer.reset();
 
-            double deltaPower = - ((errorRPM * kp) + (integralErr * ki) +(derivative *kd)) ;
+            double derivative =  deltaError/time_int ;
 
-            curPower += deltaPower ;
+
+            if (Math.abs(errorRPM) < 5 ) {
+                integralErr += errorRPM * time_int;
+            } else {
+                integralErr += 0 ;
+//                integralErr += ((errorRPM > 0) ? 5 * time_int : -5 * time_int) ;
+            }
+
+            double deltaPower = -1 * time_step_mul * ((errorRPM * kp) + (integralErr * ki) +(derivative * kd)) ;
+
+            double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
+                    (Math.abs(errorRPM) > 10)  ? 1.0/4.0 :
+                            (Math.abs(errorRPM) > 5)  ? 1.0/16.0 :
+                                    (Math.abs(errorRPM) > 2.5)  ? 01.0/64.0 : (1.0/128.0) ;
+            curPower += (deltaPower * pwrMul) ;
 
             if (curPower > 0.7) curPower = 0.7 ;
             if (curPower < -0.7) curPower = -0.7 ;
 
             flywheelShooter.setPower(curPower);
-            double RPM = getRPM();
+            double RPM = getRPM(time_step);
             errorRPM = targetRPM + RPM;
             telemetry.addData("RPM = ", RPM);
             telemetry.addData("errorRPM = ", errorRPM);
@@ -168,9 +191,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(errorRPM) <  0.5 ){
+            if (Math.abs(errorRPM) <  2.5 ){
                 inLockCount += 1 ;
-                if (inLockCount > 10) {
+                if (inLockCount > 20) {
                     return (curPower);
                 }
             }
@@ -181,11 +204,16 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         return (curPower);
     }
 
+    public void shooterTrigger () {
+        flywheelServo.setPosition(0.5);
+        sleep(500);
+        flywheelServo.setPosition(1);
+    }
     public double SetRPMWobbleGoal (double targetRPM, double motorPower){
         double kp = 0.0025;
         double ki = 0.0000025 * 0;
         double kd = 0.00000005 * 0 ;
-        double errorRPM = targetRPM + getRPM();
+        double errorRPM = targetRPM + getRPM(50);
         double curPower = motorPower;
         double lastErr = 0 ;
         double integralErr = 0 ;
@@ -206,7 +234,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             if (curPower < -0.7) curPower = -0.7 ;
 
             flywheelShooter.setPower(curPower);
-            double RPM = getRPM();
+            double RPM = getRPM(50);
             errorRPM = targetRPM + RPM;
             telemetry.addData("RPM = ", RPM);
             telemetry.addData("errorRPM = ", errorRPM);
