@@ -50,13 +50,15 @@ public class NewShooterTest extends LinearOpMode {
         telemetry.update();
         // powershot rpm = 125~
         // high tower rpm = 132~
-        double targetRPM = -127.5 ;
+        double targetRPM = -129 ;
         double flywheelPower = 0.47;
-        boolean firstPass = true;
+        //double flywheelPower = 0;
+
+        boolean firstPass = false;
         while (opModeIsActive()) {
             if (firstPass) {
                 flywheelShooter.setPower(flywheelPower);
-                sleep(1000);
+                sleep(3000);
                 firstPass = false;
             }
 /*
@@ -74,10 +76,11 @@ public class NewShooterTest extends LinearOpMode {
 
             for (int i = 0 ; i < 3 ; i += 1) {
                 flywheelPower = SetRPM(targetRPM, flywheelPower);
+                flywheelPower = 1.0 * flywheelPower;
                 flywheelServo.setPosition(0.5);
                 sleep(500);
                 flywheelServo.setPosition(1);
-                sleep(2000) ;
+                //sleep(0) ;
             }
                 sleep(1000);
             stop() ;
@@ -124,13 +127,13 @@ public class NewShooterTest extends LinearOpMode {
 
     public double SetRPM (double targetRPM, double motorPower){
 
-        double time_step = 50.0 ;
+        double time_step = 100.0 ;
 
         double time_step_mul = time_step / 50.0 ;
 
         double kp = 0.0025  * 1 ;
         double ki = (0.0025/50.0) * 0.1 * 1 ;
-        double kd = 0.00025  * 1 ;
+        double kd = 0.0005  * 1;
 
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
@@ -159,10 +162,13 @@ public class NewShooterTest extends LinearOpMode {
 
             double deltaPower = -1 * time_step_mul * ((errorRPM * kp) + (integralErr * ki) +(derivative * kd)) ;
 
-            double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
+            /* double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
                             (Math.abs(errorRPM) > 10)  ? 1.0/4.0 :
                             (Math.abs(errorRPM) > 5)  ? 1.0/16.0 :
                                     (Math.abs(errorRPM) > 2.5)  ? 01.0/64.0 : (1.0/128.0) ;
+
+             */
+            double pwrMul = 1.0;
             curPower += (deltaPower * pwrMul) ;
 
             if (curPower > 0.7) curPower = 0.7 ;
@@ -177,9 +183,9 @@ public class NewShooterTest extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(errorRPM) <  2.5 ){
+            if (Math.abs(errorRPM) <  2 ){
                 inLockCount += 1 ;
-                if (inLockCount > 20) {
+                if (inLockCount > 5) {
                     return (curPower);
                 }
             }

@@ -8,9 +8,9 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name="Mecanum Intake Op Mode FR", group="PiRhos")
+@TeleOp(name="Competition 1", group="PiRhos")
 
-public class MecIntOpMode extends LinearOpMode {
+public class Comp1OpMode extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor frontLeft = null;
     private DcMotor frontRight = null;
@@ -80,6 +80,13 @@ public class MecIntOpMode extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
+        boolean sens = true;
+        double sensMult = 1.0;
+
+        boolean IntakeCalibrated = false;
+        double targetRPMIntake = 122.5;
+        double intakePower = -0.6;
+
         while (opModeIsActive()){
 
             // init variables
@@ -89,16 +96,25 @@ public class MecIntOpMode extends LinearOpMode {
             double RBPower;
             double ArmPower;
 
+            if (gamepad1.right_bumper) sens = false;
+            if (gamepad1.left_bumper) sens = true;
+            if(sens){
+                sensMult = 1.0;
+            }
+            if(sens == false){
+                sensMult = -1.0;
+            }
             double arm = gamepad2.right_stick_y ;
-            double y = -gamepad1.left_stick_y;
-            double x = gamepad1.left_stick_x;
+            double y = -gamepad1.left_stick_y * sensMult;
+            double x = gamepad1.left_stick_x * sensMult;
             double rx = gamepad1.right_stick_x;
+
             // calculate motor powers
             LFPower = (y + x + rx);
             LBPower = (y - x + rx);
             RFPower = (y - x - rx);
             RBPower = (y + x - rx);
-            ArmPower = arm;
+            ArmPower = arm * 0.8;
             // make sure none of the drive powers are too high
             if (Math.abs(LFPower) > 1 || Math.abs(LBPower) > 1 ||
                     Math.abs(RFPower) > 1 || Math.abs(RBPower) > 1 ) {
@@ -127,11 +143,17 @@ public class MecIntOpMode extends LinearOpMode {
             backRight.setPower(RBPower);
             armMotor.setPower(ArmPower);
 
-            if (gamepad1.left_bumper == true) armServo.setPosition(0);
+
+            if (gamepad2.left_bumper == true) armServo.setPosition(0);
 
 
 
-            if (gamepad1.right_bumper == true) armServo.setPosition(1);
+            if (gamepad2.right_bumper == true) armServo.setPosition(1);
+
+            if (gamepad2.y == true) shooterTrigger3x();
+
+            if (gamepad2.a == true) flywheelShooter.setPower(0);
+
 
 
 
@@ -140,13 +162,13 @@ public class MecIntOpMode extends LinearOpMode {
             //double intake1pwr = gamepad2.left_stick_y;
             //double intake2pwr = gamepad2.left_stick_y;
             if (gamepad1.b == true){
-            double I1Pwr = 0.6;
-            double I2Pwr = -1 ;
+                double I1Pwr = 0.6;
+                double I2Pwr = -1 ;
 
-            intake1.setPower(I1Pwr);
-            intake2.setPower(I2Pwr);
+                intake1.setPower(I1Pwr);
+                intake2.setPower(I2Pwr);
 
-        }
+            }
             if (gamepad1.y == true){
                 double I1Pwr = 0;
                 double I2Pwr = 0 ;
@@ -154,19 +176,113 @@ public class MecIntOpMode extends LinearOpMode {
                 intake1.setPower(I1Pwr);
                 intake2.setPower(I2Pwr);
             }
-            if (gamepad1.x == true){
-                double I1Pwr = -0.6;
-                double I2Pwr = 1 ;
 
-                intake1.setPower(I1Pwr);
+            if (gamepad1.x == true){
+                double I2Pwr = 1 ;
                 intake2.setPower(I2Pwr);
 
-            }
+                if (!IntakeCalibrated){
+                    intakePower = SetRPMIntake(targetRPMIntake, intakePower);
+                    IntakeCalibrated = true;
+                }
+                double I1Pwr = intakePower;
+
+
+                intake1.setPower(I1Pwr);
 
             }
 
 
+        }
 
+
+
+    }
+
+    public double getRPMIntake (double waitTime){
+        ElapsedTime timer = new ElapsedTime ();
+        double startFWCount = intake1.getCurrentPosition();
+        while (timer.milliseconds() < waitTime)
+        {
+        }
+
+        double timeVar = (250.0/waitTime);
+        double deltaFW = intake1.getCurrentPosition() - startFWCount;
+
+        double RPM = timeVar * (deltaFW * 240)/537.6;
+
+        return RPM;
+    }
+
+    public double SetRPMIntake (double targetRPM, double motorPower){
+
+        double time_step = 100.0 ;
+
+        double time_step_mul = time_step / 50.0 ;
+
+        double kp = 0.0025  * 0.1 ;
+        double ki = (0.0025/50.0) * 0.1 * 0 ;
+        double kd = 0.0005  * 0;
+
+        ElapsedTime timer = new ElapsedTime();
+        timer.reset();
+
+        double errorRPM = targetRPM + getRPMIntake(time_step);
+        double curPower = motorPower;
+        double lastErr = 0 ;
+        double integralErr = 0 ;
+        int inLockCount = 0 ;
+        int loop_count = 0 ;
+        while (loop_count < 50) {
+            double deltaError = errorRPM - lastErr;
+            lastErr = errorRPM ;
+            double time_int = timer.time() ;
+            timer.reset();
+
+            double derivative =  deltaError/time_int ;
+
+
+            if (Math.abs(errorRPM) < 5 ) {
+                integralErr += errorRPM * time_int;
+            } else {
+                integralErr += 0 ;
+//                integralErr += ((errorRPM > 0) ? 5 * time_int : -5 * time_int) ;
+            }
+
+            double deltaPower = -1 * time_step_mul * ((errorRPM * kp) + (integralErr * ki) +(derivative * kd)) ;
+
+            /* double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
+                            (Math.abs(errorRPM) > 10)  ? 1.0/4.0 :
+                            (Math.abs(errorRPM) > 5)  ? 1.0/16.0 :
+                                    (Math.abs(errorRPM) > 2.5)  ? 01.0/64.0 : (1.0/128.0) ;
+
+             */
+            double pwrMul = 1.0;
+            curPower += (deltaPower * pwrMul) ;
+
+            if (curPower > 0.7) curPower = 0.7 ;
+            if (curPower < -0.7) curPower = -0.7 ;
+
+            intake1.setPower(curPower);
+            double RPM = getRPMIntake(time_step);
+            errorRPM = targetRPM + RPM;
+            telemetry.addData("RPMIntake = ", RPM);
+            telemetry.addData("errorRPM = ", errorRPM);
+            telemetry.addData("curPower  = ", curPower);
+            telemetry.addData("deltaPower  = ", deltaPower);
+            telemetry.update();
+
+            if (Math.abs(errorRPM) <  5 ){
+                inLockCount += 1 ;
+                if (inLockCount > 5) {
+                    return (curPower);
+                }
+            }
+            else {
+                inLockCount = 0 ;
+            }
+        }
+        return (curPower);
     }
     public double getRPM(double waitTime ){
         ElapsedTime timer = new ElapsedTime ();
@@ -187,13 +303,13 @@ public class MecIntOpMode extends LinearOpMode {
 
     public double SetRPM (double targetRPM, double motorPower){
 
-        double time_step = 50.0 ;
+        double time_step = 100.0 ;
 
         double time_step_mul = time_step / 50.0 ;
 
         double kp = 0.0025  * 1 ;
         double ki = (0.0025/50.0) * 0.1 * 1 ;
-        double kd = 0.00025  * 1 ;
+        double kd = 0.0005  * 1;
 
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
@@ -222,10 +338,13 @@ public class MecIntOpMode extends LinearOpMode {
 
             double deltaPower = -1 * time_step_mul * ((errorRPM * kp) + (integralErr * ki) +(derivative * kd)) ;
 
-            double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
-                    (Math.abs(errorRPM) > 10)  ? 1.0/4.0 :
+            /* double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
+                            (Math.abs(errorRPM) > 10)  ? 1.0/4.0 :
                             (Math.abs(errorRPM) > 5)  ? 1.0/16.0 :
                                     (Math.abs(errorRPM) > 2.5)  ? 01.0/64.0 : (1.0/128.0) ;
+
+             */
+            double pwrMul = 1.0;
             curPower += (deltaPower * pwrMul) ;
 
             if (curPower > 0.7) curPower = 0.7 ;
@@ -240,9 +359,9 @@ public class MecIntOpMode extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(errorRPM) <  2.5 ){
+            if (Math.abs(errorRPM) <  2 ){
                 inLockCount += 1 ;
-                if (inLockCount > 20) {
+                if (inLockCount > 5) {
                     return (curPower);
                 }
             }
@@ -252,5 +371,16 @@ public class MecIntOpMode extends LinearOpMode {
         }
         return (curPower);
     }
-
+    public void shooterTrigger3x (){
+        for (int i = 0 ; i < 3 ; i += 1) {
+            double targetRPM = -129 ;
+            double flywheelPower = 0.47;
+            flywheelPower = SetRPM(targetRPM, flywheelPower);
+            flywheelPower = 1.0 * flywheelPower;
+            flywheelServo.setPosition(0.5);
+            sleep(500);
+            flywheelServo.setPosition(1);
+            //sleep(0) ;
+        }
+    }
 }
