@@ -44,7 +44,7 @@ public class OpenCVTestPipeline extends OpenCvPipeline
     static final int REGION_HEIGHT = 40;
     // this is thresholds for return values
     final double FOUR_RING_THRESHOLD = 0.7;
-    final double ONE_RING_THRESHOLD = 0.4;
+    final double ONE_RING_THRESHOLD = 0.25;
 
     /*
      * Points which actually define the sample region rectangles, derived from above values

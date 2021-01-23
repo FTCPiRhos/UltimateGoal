@@ -13,7 +13,8 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-        double shooterPwr = -0.49 ;
+        double targetRPM = -125 ;
+        double flywheelPower = 0;
 
         // Find number of rings + print for drivers
         OpenCVTestPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000 );
@@ -22,42 +23,50 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
         telemetry.update();
 
         // Set flywheel power at beginning to speed up set time
-        flywheelShooter.setPower(shooterPwr);
+        flywheelShooter.setPower(flywheelPower);
 
         // Move fwd and left to shoot 3 shots
-        moveWPID(6,-64);
-        moveWPID(-15,0);
-
-        shooterPwr = SetRPM(127, shooterPwr);
+        moveWPID(2,-58);
+        moveWPID(-14,0);
+/*
+        flywheelPower = SetRPM(targetRPM, flywheelPower);
+        flywheelPower = 1.0 * flywheelPower;
         shooterTrigger();
-        sleep(1500);
+        //sleep(1500);
 
-        shooterPwr = SetRPM(127, shooterPwr);
+        flywheelPower = SetRPM(targetRPM, flywheelPower);
+        flywheelPower = 1.0 * flywheelPower;
         shooterTrigger();
-        sleep(1500);
+        //sleep(1500);
 
-        shooterPwr = SetRPM(127, shooterPwr);
+        flywheelPower = SetRPM(targetRPM, flywheelPower);
+        flywheelPower = 1.0 * flywheelPower;
         shooterTrigger();
-        sleep(1500);
+       // sleep(1500);
+
+ */
+        shooterTrigger3x();
 
         // Drop off the wobble goal to specific box + align to goal
         if ( objectFound.equals(OpenCVTestPipeline.RingPosition.NONE) ){
-            moveWPID(-30, -6);
+            rotate(90, .8);
+            moveWPID(0, -14);
             CommonMethodForArm();
-            sleep(500);
-            moveWPID(20, -12);
+            //sleep(100);
+            moveWPID(0, 14);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.ONE) ){
-            moveWPID(-6, -30);
+            moveWPID(-12, -24);
             CommonMethodForArm();
-            sleep(500);
-            moveWPID(-4, 12);
+            //sleep(100);
+            moveWPID(6, 18);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.FOUR)){
-            moveWPID(-30, -54);
+            rotate(90, .8);
+            moveWPID(46, -18);
             CommonMethodForArm();
-            sleep(500);
-            moveWPID(20, 36);
+            //sleep(100);
+            moveWPID(-38, 18);
         }
 
         // Move back to grab second wobble goal

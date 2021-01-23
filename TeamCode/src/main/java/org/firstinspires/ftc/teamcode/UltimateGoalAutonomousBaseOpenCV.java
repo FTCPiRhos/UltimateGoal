@@ -4,17 +4,23 @@ import android.app.Activity;
 import android.view.View;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.GyroSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
@@ -58,6 +64,15 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     StarterStackDeterminationPipeline old_pipeline;
     OpenCVTestPipeline pipeline;
 
+    //Rotation related
+    BNO055IMU               imu;
+    Orientation             lastAngles = new Orientation();
+    double                  globalAngle, power = .30, correction;
+    PIDController           pidRotate, pidDrive;
+    GyroSensor gyro;
+    Orientation angles;
+    Acceleration gravity;
+
     protected void initHardware( boolean fOpenCVLeft ) {
 
         frontLeft = hardwareMap.get(DcMotor.class, "left_front");
@@ -93,7 +108,18 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         armMotor.setDirection(DcMotor.Direction.FORWARD);
         flywheelShooter.setDirection(DcMotorSimple.Direction.REVERSE);
 
-
+        //Rotation related
+        pidRotate = new PIDController( .003, .00003, 0);
+        pidDrive = new PIDController(.05, 0, 0);
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
+        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
+        parameters.loggingEnabled      = true;
+        parameters.loggingTag          = "IMU";
+        parameters.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        imu.initialize(parameters);
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
@@ -117,6 +143,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         telemetry.addData("Status", "Initialization Done");
         telemetry.update();
+        sleep(2000);
+        telemetry.addData("Status", "Ready");
+        telemetry.update();
     }
 
     public double getRPM(double waitTime ){
@@ -138,13 +167,13 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     public double SetRPM (double targetRPM, double motorPower){
 
-        double time_step = 50.0 ;
+        double time_step = 100.0 ;
 
         double time_step_mul = time_step / 50.0 ;
 
         double kp = 0.0025  * 1 ;
         double ki = (0.0025/50.0) * 0.1 * 1 ;
-        double kd = 0.00025  * 1 ;
+        double kd = 0.0005  * 1;
 
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
@@ -173,10 +202,13 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
             double deltaPower = -1 * time_step_mul * ((errorRPM * kp) + (integralErr * ki) +(derivative * kd)) ;
 
-            double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
-                    (Math.abs(errorRPM) > 10)  ? 1.0/4.0 :
+            /* double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
+                            (Math.abs(errorRPM) > 10)  ? 1.0/4.0 :
                             (Math.abs(errorRPM) > 5)  ? 1.0/16.0 :
                                     (Math.abs(errorRPM) > 2.5)  ? 01.0/64.0 : (1.0/128.0) ;
+
+             */
+            double pwrMul = 1.0;
             curPower += (deltaPower * pwrMul) ;
 
             if (curPower > 0.7) curPower = 0.7 ;
@@ -191,9 +223,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(errorRPM) <  2.5 ){
+            if (Math.abs(errorRPM) <  2 ){
                 inLockCount += 1 ;
-                if (inLockCount > 20) {
+                if (inLockCount > 12) {
                     return (curPower);
                 }
             }
@@ -204,10 +236,13 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         return (curPower);
     }
 
-    public void shooterTrigger () {
-        flywheelServo.setPosition(0.5);
-        sleep(500);
-        flywheelServo.setPosition(1);
+
+    public void shooterTrigger (){
+            flywheelServo.setPosition(0.5);
+            sleep(500);
+            flywheelServo.setPosition(1);
+            //sleep(0) ;
+
     }
     public double SetRPMWobbleGoal (double targetRPM, double motorPower){
         double kp = 0.0025;
@@ -289,8 +324,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         double lastYError = 0;
         double curPowerX = 0;
         double curPowerY = 0;
-        double capPowerX = .3;
-        double capPowerY = .3;
+        double capPowerX = .75;
+        double capPowerY = .75;
         double minPowerX = 0;
         double minPowerY = 0;
         double deltaKX = 1;
@@ -372,7 +407,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             frontLeft.setPower(curPowerLF);
             frontRight.setPower(curPowerRF);
 
-            sleep(25);
+            sleep(50);
 
             double posBL = backLeft.getCurrentPosition() ;
             double posBR = backRight.getCurrentPosition() ;
@@ -390,8 +425,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             lastXError = errorX;
             lastYError = errorY;
 
-            movementDoneX = (Math.abs(errorX)<25) || movementDoneX;
-            movementDoneY = (Math.abs(errorY)<25) || movementDoneY;
+            movementDoneX = (Math.abs(errorX)<100) || movementDoneX;
+            movementDoneY = (Math.abs(errorY)<100) || movementDoneY;
 
             telemetry.addData("ErrX = ", errorX) ;
             telemetry.addData("ErrY = ", errorY) ;
@@ -677,6 +712,147 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
 
         }
+    public void shooterTrigger3x (){
+        for (int i = 0 ; i < 3 ; i += 1) {
+            double targetRPM = -127 ;
+            double flywheelPower = 0.47;
+            flywheelPower = SetRPM(targetRPM, flywheelPower);
+            flywheelPower = 1.0 * flywheelPower;
+            flywheelServo.setPosition(0.5);
+            sleep(500);
+            flywheelServo.setPosition(1);
+            //sleep(0) ;
+        }
+    }
+    private void resetAngle()
+    {
+        lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        globalAngle = 0;
+    }
+    public double getAngle()
+    {
+        // We experimentally determined the Z axis is the axis we want to use for heading angle.
+        // We have to process the angle because the imu works in euler angles so the Z axis is
+        // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
+        // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
+
+        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        double deltaFirstAngle = angles.firstAngle - lastAngles.firstAngle;
+
+
+
+
+        if (deltaFirstAngle < -180)
+            deltaFirstAngle += 360;
+        else if (deltaFirstAngle > 180)
+            deltaFirstAngle -= 360;
+
+        globalAngle += deltaFirstAngle;
+
+        lastAngles = angles;
+
+        telemetry.addData("First Angle = ", angles.firstAngle);
+        telemetry.addData("Second Angle = ", angles.secondAngle);
+        telemetry.addData("Third Angle = ", angles.thirdAngle);
+        telemetry.update();
+
+
+
+
+        return globalAngle;
+
+
+
+
+    }
+    public boolean rotate(int degrees, double power)
+    {
+
+        double  leftPower, rightPower;
+
+        // restart imu movement tracking.
+        resetAngle();
+
+        // getAngle() returns + when rotating counter clockwise (left) and - when rotating
+        // clockwise (right).
+
+        if (degrees < 0)
+        {   // turn right.
+            leftPower = -power;
+            rightPower = power;
+        }
+        else if (degrees > 0)
+        {   // turn left.
+            leftPower = power;
+            rightPower = -power;
+        }
+        else return false;
+
+        // set power to rotate.
+        frontLeft.setPower(leftPower);
+        backLeft.setPower(leftPower);
+        frontRight.setPower(rightPower);
+        backRight.setPower(rightPower);
+
+/*
+        for ( int i = 0; i < 100; i++ ) {
+            telemetry.addLine(">>> " + getAngle());
+            telemetry.update();
+            sleep(1000);
+        }
+        // rotate until turn is completed.
+        // On right turn we have to get off zero first.
+*/
+        degrees = -degrees;
+        while (opModeIsActive() && Math.abs( getAngle() - degrees ) > 5.0 ) {
+            sleep(10);
+            // if( rotated 60 percent), reduce the speed of the wheels by half.
+
+            double AnglePrecToSlowDown = 0.8;
+            if ( degrees <= 60.0 )
+                AnglePrecToSlowDown =0.6;
+
+            if(getAngle() > AnglePrecToSlowDown * degrees ) {
+                double diff = degrees - getAngle();
+                double modifier = 0.2 + 0.3 * ( diff/ degrees );
+                frontRight.setPower(rightPower * modifier );
+                backLeft.setPower(leftPower * modifier);
+                frontLeft.setPower(leftPower * modifier);
+                backRight.setPower(rightPower * modifier);
+
+
+
+            }
+
+
+
+        }
+
+        // turn the motors off.
+        frontLeft.setPower(0);
+        backLeft.setPower(0);
+        frontRight.setPower(0);
+        backRight.setPower(0);
+
+
+/*
+        while (opModeIsActive() && getAngle() > degrees) {
+            frontRight.setPower(-power);
+            backLeft.setPower(-power);
+            frontLeft.setPower(-power);
+            backRight.setPower(-power);
+        }
+*/
+
+        // wait for rotation to stop.
+        sleep(200);
+
+        // reset angle tracking on new heading.
+        resetAngle();
+        return false;
+    }
 
         }
 
