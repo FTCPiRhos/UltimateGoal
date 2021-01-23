@@ -17,7 +17,7 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
 
         // Find number of rings + print for drivers
         OpenCVTestPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000 );
-        // sleep(30000);
+        //sleep(30000);
         telemetry.addData("Object Found: ", objectFound);
         telemetry.update();
 
@@ -25,8 +25,8 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
         flywheelShooter.setPower(shooterPwr);
 
         // Move fwd and left to shoot 3 shots
-        moveWPID(6,-54);
-        moveWPID(-12,0);
+        moveWPID(6,-64);
+        moveWPID(-15,0);
 
         shooterPwr = SetRPM(127, shooterPwr);
         shooterTrigger();
@@ -42,19 +42,19 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
 
         // Drop off the wobble goal to specific box + align to goal
         if ( objectFound.equals(OpenCVTestPipeline.RingPosition.NONE) ){
-            moveWPID(-6, -6);
+            moveWPID(-30, -6);
             CommonMethodForArm();
             sleep(500);
             moveWPID(20, -12);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.ONE) ){
-            moveWPID(18, -30);
+            moveWPID(-6, -30);
             CommonMethodForArm();
             sleep(500);
             moveWPID(-4, 12);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.FOUR)){
-            moveWPID(-6, -54);
+            moveWPID(-30, -54);
             CommonMethodForArm();
             sleep(500);
             moveWPID(20, 36);
