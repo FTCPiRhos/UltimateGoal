@@ -84,7 +84,7 @@ public class Comp1OpMode extends LinearOpMode {
         double sensMult = 1.0;
 
         boolean IntakeCalibrated = false;
-        double targetRPMIntake = 122.5;
+        double targetRPMIntake = 125;
         double intakePower = -0.6;
 
         while (opModeIsActive()){
@@ -114,7 +114,7 @@ public class Comp1OpMode extends LinearOpMode {
             LBPower = (y - x + rx);
             RFPower = (y - x - rx);
             RBPower = (y + x - rx);
-            ArmPower = arm * 0.8;
+            ArmPower = arm * 1;
             // make sure none of the drive powers are too high
             if (Math.abs(LFPower) > 1 || Math.abs(LBPower) > 1 ||
                     Math.abs(RFPower) > 1 || Math.abs(RBPower) > 1 ) {
@@ -144,15 +144,15 @@ public class Comp1OpMode extends LinearOpMode {
             armMotor.setPower(ArmPower);
 
 
-            if (gamepad2.left_bumper == true) armServo.setPosition(0);
+            if (gamepad2.right_bumper == true) armServo.setPosition(0.4);
 
 
 
-            if (gamepad2.right_bumper == true) armServo.setPosition(1);
+            if (gamepad2.left_bumper == true) armServo.setPosition(1);
 
-            if (gamepad2.y == true) shooterTrigger3x();
+            if (gamepad1.dpad_up == true) shooterTrigger3x();
 
-            if (gamepad2.a == true) flywheelShooter.setPower(0);
+            if (gamepad1.dpad_down == true) flywheelShooter.setPower(0);
 
 
 
@@ -191,7 +191,10 @@ public class Comp1OpMode extends LinearOpMode {
                 intake1.setPower(I1Pwr);
 
             }
+            if (gamepad2.y == true) shooterTrigger1x(-129);
+            if (gamepad2.b) moveWPID(-9,0);
 
+            if (gamepad2.a) Powershots();
 
         }
 
@@ -302,6 +305,7 @@ public class Comp1OpMode extends LinearOpMode {
 
 
     public double SetRPM (double targetRPM, double motorPower){
+        double pwrMul = 1.0;
 
         double time_step = 100.0 ;
 
@@ -344,7 +348,6 @@ public class Comp1OpMode extends LinearOpMode {
                                     (Math.abs(errorRPM) > 2.5)  ? 01.0/64.0 : (1.0/128.0) ;
 
              */
-            double pwrMul = 1.0;
             curPower += (deltaPower * pwrMul) ;
 
             if (curPower > 0.7) curPower = 0.7 ;
@@ -359,7 +362,10 @@ public class Comp1OpMode extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(errorRPM) <  2 ){
+            if (Math.abs(errorRPM) < 1.5){
+                if(inLockCount >1){
+                    pwrMul = 0.5;
+                }
                 inLockCount += 1 ;
                 if (inLockCount > 5) {
                     return (curPower);
@@ -367,20 +373,223 @@ public class Comp1OpMode extends LinearOpMode {
             }
             else {
                 inLockCount = 0 ;
+                pwrMul = 1.0;
             }
         }
         return (curPower);
     }
     public void shooterTrigger3x (){
+        double flywheelPower = 0.47;
+
         for (int i = 0 ; i < 3 ; i += 1) {
-            double targetRPM = -129 ;
-            double flywheelPower = 0.47;
+            double targetRPM = -155 ;
             flywheelPower = SetRPM(targetRPM, flywheelPower);
             flywheelPower = 1.0 * flywheelPower;
             flywheelServo.setPosition(0.5);
             sleep(500);
             flywheelServo.setPosition(1);
-            //sleep(0) ;
+
         }
+        sleep(500) ;
+
+        flywheelShooter.setPower(0);
+
     }
+    public void shooterTrigger1x (double targetRPM){
+
+
+            double flywheelPower = 0.47;
+            flywheelPower = SetRPM(targetRPM, flywheelPower);
+            flywheelPower = 1.02 * flywheelPower;
+            flywheelServo.setPosition(0.5);
+            sleep(500);
+            flywheelServo.setPosition(1);
+            //sleep(0) ;
+    }
+    public void moveWPID (double targetXInches, double targetYInches){
+
+
+        frontLeft.setPower(0);
+        frontRight.setPower(0);
+
+        backRight.setPower(0);
+        backLeft.setPower(0);
+
+
+        double targetXCount = targetXInches * COUNTS_PER_INCH;
+        double targetYCount = targetYInches * COUNTS_PER_INCH;
+        // get starting X and Y position from encoders
+        // and solving from equation
+
+        double initialYPos = ( backLeft.getCurrentPosition() + backRight.getCurrentPosition())/2;
+        double initialXPos = ( backRight.getCurrentPosition() - backLeft.getCurrentPosition())/2;
+        // adding Count + initial
+        double targetXPos = targetXCount + initialXPos;
+        double targetYPos = targetYCount + initialYPos;
+        // setting up X and Y for loop change
+        double currentXPos = initialXPos;
+        double currentYPos = initialYPos;
+        double kp = 0.000005;
+        double ki = 0.00005;
+        double kd = 0.0005;
+        double integralX = 0;
+        double integralY = 0;
+        double finalGain = 5 ;
+
+        double errorX = targetXPos - currentXPos;
+        double errorY = targetYPos - currentYPos;
+
+        boolean movementDoneX = (Math.abs(errorX)<25) ;
+        boolean movementDoneY = (Math.abs(errorY)<25) ;
+
+        double lastXError = 0;
+        double lastYError = 0;
+        double curPowerX = 0;
+        double curPowerY = 0;
+        double capPowerX = .75;
+        double capPowerY = .75;
+        double minPowerX = 0;
+        double minPowerY = 0;
+        double deltaKX = 1;
+        double deltaKY = 1;
+        boolean firstPass = true ;
+
+
+        double curPowerLF = 0;
+        double curPowerLB = 0;
+        double curPowerRF = 0;
+        double curPowerRB = 0;
+
+        ElapsedTime timer = new ElapsedTime();
+        // start loop while any error is > some number
+        while ((!movementDoneX || !movementDoneY) ){
+
+            double deltaXError = firstPass ? 0 : errorX - lastXError;
+            double deltaYError = firstPass ? 0 : errorY - lastYError;
+
+            firstPass = false ;
+
+            double curTime = timer.time();
+
+            integralX += errorX * curTime;
+            integralY += errorY * curTime;
+
+            double derivativeX = deltaXError/curTime;
+            double derivativeY = deltaYError/curTime;
+
+
+            timer.reset();
+
+            if (movementDoneX) deltaKX = 0;
+            if (movementDoneY) deltaKY = 0;
+
+            double deltaXPower = deltaKX * ((errorX * kp) + (integralX * ki) + (derivativeX * kd));
+            double deltaYPower = deltaKY * ((errorY * kp) + (integralY * ki) + (derivativeY * kd));
+
+            curPowerX = finalGain * deltaXPower;
+            curPowerY = finalGain * deltaYPower;
+            double powerLowThreshMul = 0;
+
+            if (((Math.abs(curPowerX)) > minPowerX )  ||  ((Math.abs(curPowerY)) > minPowerY)) powerLowThreshMul = 1;
+
+            double usePwrX = powerLowThreshMul * curPowerX ;
+            double usePwrY = powerLowThreshMul * curPowerY ;
+
+            if (curPowerX > capPowerX) usePwrX = capPowerX;
+            if (curPowerX < (-1 *capPowerX)) usePwrX = -1 * capPowerX;
+
+            if (curPowerY > capPowerY) usePwrY = capPowerY;
+
+            if (curPowerY < (-1 * capPowerY)) usePwrY = -1 * capPowerY;
+
+            double PwrRatioX = (curPowerX != 0) ? Math.abs(usePwrX/curPowerX) : 0  ;
+            double PwrRatioY = (curPowerY != 0) ? Math.abs(usePwrY/curPowerY) : 0 ;
+
+            if (PwrRatioX != PwrRatioY) {
+                if ((PwrRatioX != 0) && (PwrRatioX < PwrRatioY)) {
+                    usePwrY = PwrRatioX * usePwrY / PwrRatioY  ;
+                }
+                if ((PwrRatioY != 0) && (PwrRatioY < PwrRatioX)) {
+                    usePwrX = PwrRatioY * usePwrX / PwrRatioX  ;
+                }
+
+            }
+
+            usePwrX = (!movementDoneX) ? usePwrX : 0 ;
+            usePwrY = (!movementDoneY) ? usePwrY : 0 ;
+
+            curPowerLF = usePwrY + usePwrX;
+            curPowerLB = usePwrY - usePwrX;
+            curPowerRF = usePwrY - usePwrX;
+            curPowerRB = usePwrY + usePwrX;
+
+            backRight.setPower(curPowerRB);
+            backLeft.setPower(curPowerLB);
+
+            frontLeft.setPower(curPowerLF);
+            frontRight.setPower(curPowerRF);
+
+            sleep(50);
+
+            double posBL = backLeft.getCurrentPosition() ;
+            double posBR = backRight.getCurrentPosition() ;
+
+            double posFL = frontLeft.getCurrentPosition() ;
+            double posFR = frontRight.getCurrentPosition() ;
+
+            currentYPos = (posBL  + posBR)/2;
+            currentXPos = ( posBR - posBL)/2;
+
+            errorX = (targetXPos - currentXPos) ;
+            errorY = (targetYPos - currentYPos);
+
+
+            lastXError = errorX;
+            lastYError = errorY;
+
+            movementDoneX = (Math.abs(errorX)<100) || movementDoneX;
+            movementDoneY = (Math.abs(errorY)<100) || movementDoneY;
+
+            telemetry.addData("ErrX = ", errorX) ;
+            telemetry.addData("ErrY = ", errorY) ;
+            telemetry.addData("Front Left Encoder =", posFL);
+            telemetry.addData("Front Right Encoder ", posFR);
+            telemetry.addData("Back Left Encoder", posBL);
+            telemetry.addData("Back Right Encoder =" , posBR);
+            telemetry.addData("Power ratio x =" , PwrRatioX);
+            telemetry.addData("Power ratio y =" , PwrRatioY);
+
+
+
+            telemetry.update();
+
+
+        }
+
+        double rampMul = 1.0 ;
+
+        for (int i =0 ; i < 5 ; i++) {
+            rampMul -= 0.2 ;
+            frontLeft.setPower(curPowerLF * rampMul );
+            frontRight.setPower(curPowerRF *rampMul );
+
+            backRight.setPower(curPowerRB * rampMul);
+            backLeft.setPower(curPowerLB * rampMul);
+            sleep(10);
+        }
+
+
+    }
+    public void Powershots (){
+        shooterTrigger1x(-150);
+        moveWPID(-9.5,0);
+        shooterTrigger1x(-150);
+        moveWPID(-8.5,0);
+        shooterTrigger1x(-150);
+        sleep(500);
+        flywheelShooter.setPower(0);
+
+
+    }
+
 }
