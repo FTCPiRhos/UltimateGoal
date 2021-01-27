@@ -76,37 +76,30 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     protected void initHardware( boolean fOpenCVLeft ) {
 
         frontLeft = hardwareMap.get(DcMotor.class, "left_front");
-        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontRight = hardwareMap.get(DcMotor.class, "right_front");
-        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backLeft = hardwareMap.get(DcMotor.class, "left_back");
-        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight = hardwareMap.get(DcMotor.class, "right_back");
-        armServo = hardwareMap.get(Servo.class,"arm_servo");
         armMotor = hardwareMap.get(DcMotor.class, "arm_motor");
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        armServo = hardwareMap.get(Servo.class,"arm_servo");
+
+        // Most robots need the motor on one side to be reversed to drive forward
+        // Reverse the motor that runs backwards when connected directly to the battery
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        backLeft.setDirection((DcMotor.Direction.REVERSE));
+        frontRight.setDirection(DcMotor.Direction.FORWARD);
+        backRight.setDirection(DcMotor.Direction.FORWARD);
+        armMotor.setDirection(DcMotor.Direction.FORWARD);
+        armServo.setDirection(Servo.Direction.FORWARD);
 
 
         flywheelShooter = hardwareMap.get(DcMotor.class, "flywheel_shooter");
         flywheelShooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flywheelShooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        flywheelServo = hardwareMap.get(Servo.class, "flywheel_servo");
 
-
-        frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        backLeft.setDirection((DcMotor.Direction.REVERSE));
-        frontRight.setDirection(DcMotor.Direction.FORWARD);
-        backRight.setDirection(DcMotor.Direction.FORWARD);
-        armServo.setDirection(Servo.Direction.FORWARD);
-        armMotor.setDirection(DcMotor.Direction.FORWARD);
         flywheelShooter.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        flywheelServo = hardwareMap.get(Servo.class, "flywheel_servo");
 
         //Rotation related
         pidRotate = new PIDController( .003, .00003, 0);
@@ -223,9 +216,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(errorRPM) <  2 ){
+            if (Math.abs(errorRPM) <  1.5 ){
                 inLockCount += 1 ;
-                if (inLockCount > 12) {
+                if (inLockCount > 10) {
                     return (curPower);
                 }
             }
@@ -714,7 +707,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         }
     public void shooterTrigger3x (){
         for (int i = 0 ; i < 3 ; i += 1) {
-            double targetRPM = -127 ;
+            double targetRPM = -155 ;
             double flywheelPower = 0.47;
             flywheelPower = SetRPM(targetRPM, flywheelPower);
             flywheelPower = 1.0 * flywheelPower;
@@ -853,8 +846,29 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         resetAngle();
         return false;
     }
+    public void shooterTrigger1x (double targetRPM){
 
-        }
+
+        double flywheelPower = 0.47;
+        flywheelPower = SetRPM(targetRPM, flywheelPower);
+        flywheelPower = 1.0 * flywheelPower;
+        flywheelServo.setPosition(0.5);
+        sleep(500);
+        flywheelServo.setPosition(1);
+        flywheelShooter.setPower(0);
+        //sleep(0) ;
+    }
+    public void Powershots (){
+        shooterTrigger1x(-124);
+        moveWPID(-10.5,0);
+        shooterTrigger1x(-124);
+        moveWPID(-9,0);
+        shooterTrigger1x(-124);
+
+    }
+
+
+}
 
 
 

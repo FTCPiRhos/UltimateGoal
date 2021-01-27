@@ -2,8 +2,8 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name="Auto Red Left", group="PiRhos")
-public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
+@Autonomous(name="Auto Red Left PS", group="PiRhos")
+public class Auto_Red_LeftPS extends UltimateGoalAutonomousBaseOpenCV{
 
     @Override
     public void runOpMode() {
@@ -13,7 +13,7 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-       // double targetRPM = -125 ;
+        double targetRPM = -125 ;
         double flywheelPower = 0;
 
         // Find number of rings + print for drivers
@@ -26,9 +26,11 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
         flywheelShooter.setPower(flywheelPower);
 
         // Move fwd and left to shoot 3 shots
-        moveWPID(2,-58);
-        moveWPID(-14,0);
-/*
+        moveWPID(24,-60.5);
+        Powershots();
+        stop();
+
+        /*
         flywheelPower = SetRPM(targetRPM, flywheelPower);
         flywheelPower = 1.0 * flywheelPower;
         shooterTrigger();
@@ -50,10 +52,10 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
         // Drop off the wobble goal to specific box + align to goal
         if ( objectFound.equals(OpenCVTestPipeline.RingPosition.NONE) ){
             rotate(90, .8);
-            moveWPID(0, -14);
+            moveWPID(0, -30);
             CommonMethodForArm();
             //sleep(100);
-            moveWPID(0, 14);
+            moveWPID(0, 30);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.ONE) ){
             moveWPID(-12, -24);
