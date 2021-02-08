@@ -17,8 +17,8 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
         double flywheelPower = 0;
 
         // Find number of rings + print for drivers
-        OpenCVTestPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000 );
-        //sleep(30000);
+        OpenCVTestPipelineComp2.RingPosition objectFound = OpenCVRecognizeStack(1000 );
+        sleep(30000);
         telemetry.addData("Object Found: ", objectFound);
         telemetry.update();
 
