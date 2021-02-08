@@ -62,7 +62,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     //OpenCV related initalization
     OpenCvInternalCamera webcam;
     StarterStackDeterminationPipeline old_pipeline;
-    OpenCVTestPipeline pipeline;
+    OpenCVTestPipelineComp2 pipeline;
 
     //Rotation related
     BNO055IMU               imu;
@@ -117,7 +117,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
         old_pipeline = new StarterStackDeterminationPipeline( fOpenCVLeft );
-        pipeline = new OpenCVTestPipeline( fOpenCVLeft );
+        pipeline = new OpenCVTestPipelineComp2( fOpenCVLeft );
         webcam.setPipeline(pipeline);
 
         // We set the viewport policy to optimized view so the preview doesn't appear 90 deg
@@ -630,9 +630,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     }
 
-    protected OpenCVTestPipeline.RingPosition OpenCVRecognizeStack(double milliseconds ) {
+    protected OpenCVTestPipelineComp2.RingPosition OpenCVRecognizeStack(double milliseconds ) {
         ElapsedTime runtime = new ElapsedTime();
-        OpenCVTestPipeline.RingPosition stackHeight = OpenCVTestPipeline.RingPosition.NONE;
+        OpenCVTestPipelineComp2.RingPosition stackHeight = OpenCVTestPipelineComp2.RingPosition.NONE;
 
         while (opModeIsActive() && runtime.milliseconds() < milliseconds)
         {

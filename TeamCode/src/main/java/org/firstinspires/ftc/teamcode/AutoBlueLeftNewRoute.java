@@ -17,7 +17,7 @@ public class AutoBlueLeftNewRoute extends UltimateGoalAutonomousBaseOpenCV{
         double shooterPwr = -0.49 ;
 
         // Find number of rings + print for drivers
-        OpenCVTestPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000 );
+        OpenCVTestPipelineComp2.RingPosition objectFound = OpenCVRecognizeStack(1000 );
         // sleep(30000);
         telemetry.addData("Object Found: ", objectFound);
         telemetry.update();
