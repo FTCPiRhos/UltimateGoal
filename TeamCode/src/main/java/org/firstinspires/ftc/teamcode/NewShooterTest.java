@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -18,7 +19,7 @@ import org.openftc.easyopencv.OpenCvInternalCamera;
 @TeleOp(name="Flywheel New Test", group="PiRhos")
 
 
-public class NewShooterTest extends LinearOpMode {
+@Disabled public class NewShooterTest extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private Servo flywheelServo = null;

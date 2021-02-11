@@ -84,17 +84,26 @@ public class Comp1OpMode extends LinearOpMode {
         double sensMult = 1.0;
 
         boolean IntakeCalibrated = false;
-        double targetRPMIntake = 125;
-        double intakePower = -0.6;
+        double targetRPMIntake = 150;
+        double flywheelPower = 0.6;
+        double LFPower;
+        double LBPower;
+        double RFPower;
+        double RBPower;
+        double ArmPower;
+        double DrivePwrMul;
+        double intakePower;
+        double PowershotPower = 0;
+        boolean firstPS = true;
+
 
         while (opModeIsActive()){
+            intakePower = 1.6 * flywheelPower ;
+            DrivePwrMul = 1.0 - (gamepad1.right_trigger);
+
 
             // init variables
-            double LFPower;
-            double LBPower;
-            double RFPower;
-            double RBPower;
-            double ArmPower;
+
 
             if (gamepad1.right_bumper) sens = false;
             if (gamepad1.left_bumper) sens = true;
@@ -132,10 +141,10 @@ public class Comp1OpMode extends LinearOpMode {
                 RBPower /= max;
             }
 
-            LFPower = LFPower * 0.75;
-            LBPower = LBPower * 0.75;
-            RFPower = RFPower * 0.75;
-            RBPower = RBPower * 0.75;
+            LFPower = LFPower * DrivePwrMul;
+            LBPower = LBPower * DrivePwrMul;
+            RFPower = RFPower * DrivePwrMul;
+            RBPower = RBPower * DrivePwrMul;
 
             frontLeft.setPower(LFPower);
             backLeft.setPower(LBPower);
@@ -150,9 +159,15 @@ public class Comp1OpMode extends LinearOpMode {
 
             if (gamepad2.left_bumper == true) armServo.setPosition(1);
 
-            if (gamepad1.dpad_up == true) shooterTrigger3x();
+            if (gamepad1.dpad_up == true) flywheelPower = shooterTrigger3xNP(flywheelPower);
 
             if (gamepad1.dpad_down == true) flywheelShooter.setPower(0);
+
+            if (gamepad1.dpad_left == true){
+                flywheelServo.setPosition(0.5);
+                sleep(500);
+                flywheelServo.setPosition(1);
+            }
 
 
 
@@ -162,8 +177,8 @@ public class Comp1OpMode extends LinearOpMode {
             //double intake1pwr = gamepad2.left_stick_y;
             //double intake2pwr = gamepad2.left_stick_y;
             if (gamepad1.b == true){
-                double I1Pwr = 0.6;
-                double I2Pwr = -1 ;
+                double I1Pwr = 0.7;
+                double I2Pwr = -0.7 ;
 
                 intake1.setPower(I1Pwr);
                 intake2.setPower(I2Pwr);
@@ -178,23 +193,51 @@ public class Comp1OpMode extends LinearOpMode {
             }
 
             if (gamepad1.x == true){
-                double I2Pwr = 1 ;
+                double I2Pwr = 0.7 ;
                 intake2.setPower(I2Pwr);
-
+/*
                 if (!IntakeCalibrated){
                     intakePower = SetRPMIntake(targetRPMIntake, intakePower);
                     IntakeCalibrated = true;
                 }
-                double I1Pwr = intakePower;
 
+ */
+               // if (intakePower > 0.85) intakePower = 0.85;
+
+                double I1Pwr = -0.7;
 
                 intake1.setPower(I1Pwr);
 
             }
-            if (gamepad2.y == true) shooterTrigger1x(-129);
+
+           // if (gamepad1.a == true){
+             //   shooterTrigger1x(-145);
+                /*
+                if (firstPS == true){
+                    PowershotPower = shooterTrigger1x(-148);
+                    firstPS = false;
+                }
+                flywheelShooter.setPower(PowershotPower);
+
+                 */
+          //  }
             if (gamepad2.b) moveWPID(-9,0);
 
-            if (gamepad2.a) Powershots();
+            //if (gamepad2.a); PowershotPower = shooterTrigger1x(-148);
+
+
+            if (gamepad2.x) CommonMethodForArm();
+
+            if (gamepad1.a){
+                flywheelServo.setPosition(0.5);
+                sleep(500);
+                flywheelServo.setPosition(1);
+                flywheelShooter.setPower(PowershotPower);
+            }
+            if (gamepad2.y){
+                    PowershotPower = shooterTrigger1xR(-145);
+
+            }
 
         }
 
@@ -263,8 +306,8 @@ public class Comp1OpMode extends LinearOpMode {
             double pwrMul = 1.0;
             curPower += (deltaPower * pwrMul) ;
 
-            if (curPower > 0.7) curPower = 0.7 ;
-            if (curPower < -0.7) curPower = -0.7 ;
+            //if (curPower > 0.7) curPower = 0.7 ;
+            //if (curPower < -0.7) curPower = -0.7 ;
 
             intake1.setPower(curPower);
             double RPM = getRPMIntake(time_step);
@@ -395,6 +438,24 @@ public class Comp1OpMode extends LinearOpMode {
         flywheelShooter.setPower(0);
 
     }
+    public double shooterTrigger3xNP ( double flywheelPower){
+        double targetRPM = -157.5 ;
+        flywheelPower = SetRPM(targetRPM, flywheelPower);
+
+        for (int i = 0 ; i < 3 ; i += 1) {
+            flywheelServo.setPosition(0.5);
+            sleep(500);
+            flywheelShooter.setPower(flywheelPower * 1.1);
+            flywheelServo.setPosition(1);
+            sleep(500);
+        }
+        sleep(500) ;
+
+        flywheelShooter.setPower(0);
+
+        return(flywheelPower);
+
+    }
     public void shooterTrigger1x (double targetRPM){
 
 
@@ -404,7 +465,15 @@ public class Comp1OpMode extends LinearOpMode {
             flywheelServo.setPosition(0.5);
             sleep(500);
             flywheelServo.setPosition(1);
+           // return (flywheelPower);
             //sleep(0) ;
+    }
+    public double shooterTrigger1xR (double targetRPM){
+        double flywheelPower = 0.47;
+        flywheelPower = SetRPM(targetRPM, flywheelPower);
+        flywheelPower = 1.0 * flywheelPower;
+         return (flywheelPower);
+        //sleep(0) ;
     }
     public void moveWPID (double targetXInches, double targetYInches){
 
@@ -588,6 +657,82 @@ public class Comp1OpMode extends LinearOpMode {
         shooterTrigger1x(-150);
         sleep(500);
         flywheelShooter.setPower(0);
+
+
+    }
+    public void PowershotsFast (){
+        double flywheelPower = 0.47;
+        double targetRPM = -150;
+        flywheelPower = SetRPM(targetRPM, flywheelPower);
+        for (int i = 0 ; i < 3 ; i += 1) {
+            flywheelServo.setPosition(0.5);
+            sleep(500);
+            flywheelShooter.setPower(flywheelPower * 1.1);
+            flywheelServo.setPosition(1);
+            sleep(500);
+            moveWPID(-9,0);
+
+
+
+        }
+
+
+    }
+    public void ArmEncoders(double speed, double distance, int timeoutInMilliseconds) {
+        int newArmTarget;
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        // Ensure that the opmode is still active
+        if (opModeIsActive()) {
+
+            // Determine new target position, and pass to motor controller
+
+            newArmTarget = armMotor.getCurrentPosition() + (int) (distance * COUNTS_PER_INCH);
+            armMotor.setTargetPosition(newArmTarget);
+
+            // Turn On RUN_TO_POSITION
+            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            // reset the timeout time and start motion.
+            runtime.reset();
+            armMotor.setPower(speed);
+
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+            // its target position, the motion will stop.  This is "safer" in the event that the robot will
+            // always end the motion as soon as possible.
+            // However, if you require that BOTH motors have finished their moves before the robot continues
+            // onto the next step, use (isBusy() || isBusy()) in the loop test.
+            while (opModeIsActive() && (runtime.milliseconds() < timeoutInMilliseconds) &&
+                    (armMotor.isBusy())) {
+
+                // Display it for the driver.
+                telemetry.addData("Path1", "Running to %7d", newArmTarget);
+                telemetry.addData("Path2", "Running at %7d", armMotor.getCurrentPosition());
+
+                telemetry.update();
+            }
+
+            // Stop all motion;
+            armMotor.setPower(0);
+
+
+            // Turn off RUN_TO_POSITION
+            armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
+            //  sleep(250);   // optional pause after each move
+        }
+    }
+
+    public void CommonMethodForArm() {
+
+        ArmEncoders(0.7, -0.88, 10000);
+        sleep(500);
+        armServo.setPosition(0);
+        moveWPID(8, 0);
+        ArmEncoders(0.7, 1.3, 10000);
+        armServo.setPosition(1);
 
 
     }

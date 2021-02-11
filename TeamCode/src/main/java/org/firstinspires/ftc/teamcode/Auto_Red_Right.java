@@ -1,11 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 import org.opencv.core.Point;
 
 @Autonomous(name="Auto Red Right", group="PiRhos")
-public class Auto_Red_Right extends UltimateGoalAutonomousBaseOpenCV{
+@Disabled public class Auto_Red_Right extends UltimateGoalAutonomousBaseOpenCV{
 
     @Override
     public void runOpMode() {

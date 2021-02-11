@@ -1,12 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Autonomous(name="PID Test", group="PiRhos")
 
 
-public class PIDTest extends UltimateGoalAutonomousBase {
+@Disabled public class PIDTest extends UltimateGoalAutonomousBase {
     @Override
     public void runOpMode() {
 

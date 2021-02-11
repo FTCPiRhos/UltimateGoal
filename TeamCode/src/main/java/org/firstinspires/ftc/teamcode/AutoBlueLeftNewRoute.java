@@ -1,10 +1,11 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 @TeleOp(name="Auto Blue Left New Route", group="PiRhos")
-public class AutoBlueLeftNewRoute extends UltimateGoalAutonomousBaseOpenCV{
+@Disabled public class AutoBlueLeftNewRoute extends UltimateGoalAutonomousBaseOpenCV{
 
     @Override
     public void runOpMode() {

@@ -10,6 +10,8 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
 
         // Initialize hardware
         initHardware(true);
+        flywheelServo.setPosition(1);
+        armServo.setPosition(1);
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -26,7 +28,7 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
         flywheelShooter.setPower(flywheelPower);
 
         // Move fwd and left to shoot 3 shots
-        moveWPID(2,-58);
+        moveWPID(5,-58);
         moveWPID(-14,0);
 /*
         flywheelPower = SetRPM(targetRPM, flywheelPower);
@@ -45,28 +47,28 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
        // sleep(1500);
 
  */
-        shooterTrigger3x();
+        shooterTrigger3xNP();
 
         // Drop off the wobble goal to specific box + align to goal
         if ( objectFound.equals(OpenCVTestPipeline.RingPosition.NONE) ){
             rotate(90, .8);
-            moveWPID(0, -14);
+            moveWPID(5, -11);
             CommonMethodForArm();
             //sleep(100);
-            moveWPID(0, 14);
+            moveWPID(-3, 11);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.ONE) ){
-            moveWPID(-12, -24);
+            moveWPID(-12, -14);
             CommonMethodForArm();
             //sleep(100);
-            moveWPID(6, 18);
+            moveWPID(0, 6);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.FOUR)){
             rotate(90, .8);
-            moveWPID(46, -18);
+            moveWPID(50, -12);
             CommonMethodForArm();
             //sleep(100);
-            moveWPID(-38, 18);
+            moveWPID(-42, 18);
         }
 
         // Move back to grab second wobble goal
