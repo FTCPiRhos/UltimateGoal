@@ -1,16 +1,19 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 @Autonomous(name="Auto Red Left PS", group="PiRhos")
-public class Auto_Red_LeftPS extends UltimateGoalAutonomousBaseOpenCV{
+ public class Auto_Red_LeftPS extends UltimateGoalAutonomousBaseOpenCV{
 
     @Override
+
     public void runOpMode() {
 
         // Initialize hardware
         initHardware(true);
-
+        flywheelServo.setPosition(1);
+        armServo.setPosition(1);
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         double targetRPM = -125 ;
@@ -26,8 +29,8 @@ public class Auto_Red_LeftPS extends UltimateGoalAutonomousBaseOpenCV{
         flywheelShooter.setPower(flywheelPower);
 
         // Move fwd and left to shoot 3 shots
-        moveWPID(24,-60.5);
-        Powershots();
+        moveWPID(25,-52);
+        PowershotsStrafe();
         stop();
 
         /*
@@ -47,7 +50,6 @@ public class Auto_Red_LeftPS extends UltimateGoalAutonomousBaseOpenCV{
        // sleep(1500);
 
  */
-        shooterTrigger3x();
 
         // Drop off the wobble goal to specific box + align to goal
         if ( objectFound.equals(OpenCVTestPipeline.RingPosition.NONE) ){

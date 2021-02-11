@@ -216,9 +216,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(errorRPM) <  1.5 ){
+            if (Math.abs(errorRPM) <  2 ){
                 inLockCount += 1 ;
-                if (inLockCount > 10) {
+                if (inLockCount > 5) {
                     return (curPower);
                 }
             }
@@ -324,16 +324,22 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         double deltaKX = 1;
         double deltaKY = 1;
         boolean firstPass = true ;
-
+        boolean fPosX = (errorX>= 0);
+        boolean fposY = (errorY >= 0);
 
         double curPowerLF = 0;
         double curPowerLB = 0;
         double curPowerRF = 0;
         double curPowerRB = 0;
 
+        if ((Math.abs(targetXInches) + Math.abs(targetYInches)) <25){
+            capPowerX = 1.0;
+            capPowerY = 1.0;
+        }
         ElapsedTime timer = new ElapsedTime();
         // start loop while any error is > some number
         while ((!movementDoneX || !movementDoneY) ){
+
 
             double deltaXError = firstPass ? 0 : errorX - lastXError;
             double deltaYError = firstPass ? 0 : errorY - lastYError;
@@ -418,8 +424,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             lastXError = errorX;
             lastYError = errorY;
 
-            movementDoneX = (Math.abs(errorX)<100) || movementDoneX;
-            movementDoneY = (Math.abs(errorY)<100) || movementDoneY;
+            movementDoneX = (Math.abs(errorX)<100) || movementDoneX || (fPosX && errorX<0)|| (!fPosX && errorX>0);
+            movementDoneY = (Math.abs(errorY)<100) || movementDoneY || (fposY && errorY <0)|| (!fposY && errorY>0);
+            /*
 
             telemetry.addData("ErrX = ", errorX) ;
             telemetry.addData("ErrY = ", errorY) ;
@@ -433,6 +440,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
 
             telemetry.update();
+
+             */
 
 
         }
@@ -698,6 +707,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         protected void CommonMethodForArm() {
 
             ArmEncoders(0.7, -0.88, 10000);
+            sleep(750);
             armServo.setPosition(0);
             moveWPID(8, 0);
             ArmEncoders(0.7, 1.3, 10000);
@@ -706,18 +716,22 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         }
     public void shooterTrigger3x (){
+        double flywheelPower = 0.47;
+
         for (int i = 0 ; i < 3 ; i += 1) {
             double targetRPM = -155 ;
-            double flywheelPower = 0.47;
             flywheelPower = SetRPM(targetRPM, flywheelPower);
             flywheelPower = 1.0 * flywheelPower;
             flywheelServo.setPosition(0.5);
             sleep(500);
             flywheelServo.setPosition(1);
-            //sleep(0) ;
+
         }
-    }
-    private void resetAngle()
+        sleep(500) ;
+
+        flywheelShooter.setPower(0);
+
+    }    private void resetAngle()
     {
         lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
@@ -760,7 +774,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
 
     }
-    public boolean rotate(int degrees, double power)
+    public boolean rotate(double degrees, double power)
     {
 
         double  leftPower, rightPower;
@@ -770,7 +784,6 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         // getAngle() returns + when rotating counter clockwise (left) and - when rotating
         // clockwise (right).
-
         if (degrees < 0)
         {   // turn right.
             leftPower = -power;
@@ -799,8 +812,14 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         // On right turn we have to get off zero first.
 */
         degrees = -degrees;
-        while (opModeIsActive() && Math.abs( getAngle() - degrees ) > 5.0 ) {
-            sleep(10);
+        boolean fPos = ( getAngle() - degrees >= 0 );
+        double errorDegrees;
+        while (opModeIsActive() && Math.abs( getAngle() - degrees ) > 1.0  ) {
+            errorDegrees = getAngle() - degrees;
+            if (( errorDegrees < 0 && fPos ) || ( errorDegrees > 0 && !fPos ))
+                break;
+
+            sleep(30);
             // if( rotated 60 percent), reduce the speed of the wheels by half.
 
             double AnglePrecToSlowDown = 0.8;
@@ -814,6 +833,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
                 backLeft.setPower(leftPower * modifier);
                 frontLeft.setPower(leftPower * modifier);
                 backRight.setPower(rightPower * modifier);
+
 
 
 
@@ -858,12 +878,108 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         flywheelShooter.setPower(0);
         //sleep(0) ;
     }
+    public double shooterTrigger1xR (double targetRPM){
+
+
+        double flywheelPower = 0.47;
+        flywheelPower = SetRPM(targetRPM, flywheelPower);
+        //flywheelPower = 1.0 * flywheelPower;
+        return (flywheelPower);
+
+        //sleep(0) ;
+    }
+
     public void Powershots (){
         shooterTrigger1x(-124);
         moveWPID(-10.5,0);
         shooterTrigger1x(-124);
         moveWPID(-9,0);
         shooterTrigger1x(-124);
+
+    }
+    public void PowershotsFast (){
+        double PSPower = shooterTrigger1xR(-140);
+        double turn = 3.0;
+        double turn1 = 2;
+        sleep(500);
+        //rotate(turn1,0.5);
+
+        flywheelServo.setPosition(0.5);
+        sleep(500);
+        flywheelServo.setPosition(1);
+        flywheelShooter.setPower(PSPower * 1.02);
+        sleep(1000);
+
+
+        rotate(turn,0.5);
+        sleep(500);
+
+        flywheelServo.setPosition(0.5);
+        sleep(500);
+        flywheelServo.setPosition(1);
+        flywheelShooter.setPower(PSPower * 1.02);
+        sleep(1000);
+
+        rotate(turn ,0.5);
+        sleep(500);
+
+        flywheelServo.setPosition(0.5);
+        sleep(500);
+        flywheelServo.setPosition(1);
+        sleep(250);
+        flywheelShooter.setPower(0);
+        stop();
+    }
+    public void PowershotsStrafe (){
+        double PSPower = shooterTrigger1xR(-140);
+        sleep(500);
+        //rotate(turn1,0.5);
+
+        flywheelServo.setPosition(0.5);
+        sleep(500);
+        flywheelServo.setPosition(1);
+        flywheelShooter.setPower(PSPower * 1.02);
+        sleep(500);
+
+
+        moveWPID(-7.5,0);
+        sleep(500);
+
+        flywheelServo.setPosition(0.5);
+        sleep(500);
+        flywheelServo.setPosition(1);
+        flywheelShooter.setPower(PSPower * 1.02);
+        sleep(500);
+
+        moveWPID(-8.25,0);
+        sleep(500);
+
+        flywheelServo.setPosition(0.5);
+        sleep(500);
+        flywheelServo.setPosition(1);
+        sleep(250);
+        flywheelShooter.setPower(0);
+        stop();
+    }
+
+    public void shooterTrigger3xNP (){
+        double flywheelPower = 0.47;
+        double targetRPM = -157.5 ;
+        flywheelPower = SetRPM(targetRPM, flywheelPower);
+
+        for (int i = 0 ; i < 3 ; i += 1) {
+            flywheelServo.setPosition(0.5);
+            sleep(500);
+            flywheelShooter.setPower(flywheelPower * 1.1);
+            flywheelServo.setPosition(1);
+            sleep(500);
+
+
+
+        }
+        sleep(500) ;
+
+        flywheelShooter.setPower(0);
 
     }
 
