@@ -26,7 +26,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
         flywheelShooter.setPower(shooterPwr);
 
         // Move fwd and left to shoot 3 shots
-        moveWPID(20,-54);
+        moveWPID(20,-54,0.75);
 
         shooterPwr = SetRPM(128, shooterPwr);
         telemetry.addData("Trigger", 1);
@@ -45,19 +45,19 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
         // Drop off the wobble goal to specific box + align to goal
         if ( objectFound.equals(OpenCVTestPipeline.RingPosition.NONE) ){
-            moveWPID(4, -6);
+            moveWPID(4, -6,0.75);
             sleep(500);
-            moveWPID(-20, -12);
+            moveWPID(-20, -12,0.75);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.ONE) ){
-            moveWPID(-20, -30);
+            moveWPID(-20, -30,0.75);
             sleep(500);
-            moveWPID(4, 12);
+            moveWPID(4, 12,0.75);
         }
         else if ( objectFound.equals(OpenCVTestPipeline.RingPosition.FOUR)){
-            moveWPID(4, -54);
+            moveWPID(4, -54,0.75);
             sleep(500);
-            moveWPID(-20, 36);
+            moveWPID(-20, 36,0.75);
         }
 
         // Move back to grab second wobble goal
