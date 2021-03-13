@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -9,10 +8,68 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name="Competition 1", group="PiRhos")
-@Disabled
+@TeleOp(name="Competition 3", group="PiRhos")
 
-public class Comp1OpMode extends LinearOpMode {
+
+
+
+public class Comp3Teleop extends LinearOpMode {
+    class SetRPMVars {
+        ElapsedTime timer = new ElapsedTime();
+        boolean isValid = false;
+        boolean inWhile = false ;
+        boolean isPowershot = false;
+        double pwrMul = 1.0;
+        double curPower;
+        double errorRPM;
+        double curTime;
+        double deltaError;
+
+        double time_step = 25;
+
+        double time_step_mul = time_step / 50.0;
+
+        double kp = 0.0025 * 1;
+        double ki = (0.0025 / 50.0) * 0.1 * 1;
+        double kd = 0.0005 * 1;
+
+
+        double lastErr = 0;
+        double integralErr = 0;
+        int inLockCount = 0;
+        int loop_count = 0;
+    }
+    class DrivePowerVars {
+        ElapsedTime timer = new ElapsedTime();
+
+        double pwrMul = 1.0;
+        double curPower;
+        double errorPwr;
+        double curTime;
+        double deltaError;
+
+        double time_step = 25;
+
+        double time_step_mul = time_step / 50.0;
+
+        double kp = 0.0025 * 1;
+        double ki = (0.0025 / 50.0) * 0.1 * 1;
+        double kd = 0.0005 * 1;
+
+
+        double lastErr = 0;
+        double integralErr = 0;
+        int inLockCount = 0;
+        int loop_count = 0;
+    }
+
+    private SetRPMVars shooterRPMVars = new SetRPMVars();
+    private DrivePowerVars drivePowerVars = new DrivePowerVars();
+
+
+
+
+
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor frontLeft = null;
     private DcMotor frontRight = null;
@@ -36,7 +93,7 @@ public class Comp1OpMode extends LinearOpMode {
     double intakeBottomPwr = -0.7;
     double intakeTopPwr = 0.5;
     double shooterServoRestPos = 0.6;
-    double shooterServoFlickPos = 1;
+    double shooterServoFlickPos = 1.0;
     double calibPwr;
     double calibMult = 1.0;
 
@@ -46,7 +103,7 @@ public class Comp1OpMode extends LinearOpMode {
 
 
     @Override
-    public void runOpMode(){
+    public void runOpMode() {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
@@ -59,7 +116,7 @@ public class Comp1OpMode extends LinearOpMode {
         backLeft = hardwareMap.get(DcMotor.class, "left_back");
         backRight = hardwareMap.get(DcMotor.class, "right_back");
         armMotor = hardwareMap.get(DcMotor.class, "arm_motor");
-        armServo = hardwareMap.get(Servo.class,"arm_servo");
+        armServo = hardwareMap.get(Servo.class, "arm_servo");
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
@@ -71,8 +128,8 @@ public class Comp1OpMode extends LinearOpMode {
         armServo.setDirection(Servo.Direction.FORWARD);
 
 
-        intakeTop = hardwareMap.get(DcMotor.class,"intake2");
-        intakeBottom = hardwareMap.get(DcMotor.class,"intake1");
+        intakeTop = hardwareMap.get(DcMotor.class, "intake2");
+        intakeBottom = hardwareMap.get(DcMotor.class, "intake1");
         intakeTop.setDirection(DcMotor.Direction.FORWARD);
         intakeBottom.setDirection(DcMotor.Direction.REVERSE);
 
@@ -80,15 +137,15 @@ public class Comp1OpMode extends LinearOpMode {
         flywheelShooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flywheelShooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
 
         flywheelShooter.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         flywheelServo = hardwareMap.get(Servo.class, "flywheel_servo");
         flywheelServo.setPosition(shooterServoRestPos);
-
         armServo.setPosition(1);
 
         // Wait for the game to start (driver presses PLAY)
@@ -110,29 +167,39 @@ public class Comp1OpMode extends LinearOpMode {
         double intakePower;
         double PowershotPower = 0;
         boolean firstPS = true;
-        double targetRPMGoal = -163;
+        double targetRPMGoal = -158.5;
         boolean firstGoalShot = true;
-        boolean armEndState = false;
 
-        while (opModeIsActive()){
+        while (opModeIsActive()) {
+            if (firstGoalShot){
+                shooterRPMVars.isValid=true;
+                firstGoalShot = false;
+            }
 
+            if (!shooterRPMVars.isPowershot){
+                SetRPM(targetRPMGoal,flywheelPower);
+                flywheelPower = shooterRPMVars.curPower;
+            }
+            else if (shooterRPMVars.isPowershot){
+                SetRPM(-150,flywheelPower);
+            }
 
-            intakePower = 1.6 * flywheelPower ;
+            intakePower = 1.6 * flywheelPower;
             DrivePwrMul = 1.0 - (gamepad1.right_trigger);
 
-
+            calibPwr = flywheelPower;
             // init variables
 
 
             if (gamepad1.right_bumper) sens = false;
             if (gamepad1.left_bumper) sens = true;
-            if(sens){
+            if (sens) {
                 sensMult = 1.0;
             }
-            if(sens == false){
+            if (sens == false) {
                 sensMult = -1.0;
             }
-            double arm = gamepad2.right_stick_y ;
+            double arm = gamepad2.right_stick_y;
             double y = -gamepad1.left_stick_y * sensMult;
             double x = gamepad1.left_stick_x * sensMult;
             double rx = gamepad1.right_stick_x;
@@ -145,12 +212,12 @@ public class Comp1OpMode extends LinearOpMode {
             ArmPower = arm * -1;
             // make sure none of the drive powers are too high
             if (Math.abs(LFPower) > 1 || Math.abs(LBPower) > 1 ||
-                    Math.abs(RFPower) > 1 || Math.abs(RBPower) > 1 ) {
+                    Math.abs(RFPower) > 1 || Math.abs(RBPower) > 1) {
                 // Find the largest power
                 double max = 0;
                 max = Math.max(Math.abs(LFPower), Math.abs(LBPower));
                 max = Math.max(Math.abs(max), Math.abs(RFPower));
-                max = Math.max(Math.abs(max),Math.abs(RBPower) );
+                max = Math.max(Math.abs(max), Math.abs(RBPower));
 
                 // Divide everything by max (it's positive so we don't need to worry
                 // about signs)
@@ -164,7 +231,6 @@ public class Comp1OpMode extends LinearOpMode {
             LBPower = LBPower * DrivePwrMul;
             RFPower = RFPower * DrivePwrMul;
             RBPower = RBPower * DrivePwrMul;
-
             if (gamepad2.right_trigger>0.5){
                 ArmPower = arm * -1;
             }
@@ -179,7 +245,6 @@ public class Comp1OpMode extends LinearOpMode {
                 armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
             }
-            //if (armEndState)
             frontLeft.setPower(LFPower);
             backLeft.setPower(LBPower);
             frontRight.setPower(RFPower);
@@ -190,70 +255,93 @@ public class Comp1OpMode extends LinearOpMode {
             if (gamepad2.right_bumper == true) armServo.setPosition(0.4);
 
 
-
             if (gamepad2.left_bumper == true) armServo.setPosition(1);
 
             if (gamepad1.dpad_up == true) {
-                if (firstGoalShot) {
-                    flywheelPower = shooterTrigger3xNP(flywheelPower, targetRPMGoal);
-                    calibPwr = flywheelPower;
-                    firstGoalShot = false;
-                }
-                 else {
-                    intakeTop.setPower(0);
+                    /*
+                    if (firstGoalShot) {
+                        flywheelPower = shooterTrigger3xNP(flywheelPower, targetRPMGoal, shooterRPMVars);
+                        calibPwr = flywheelPower;
+                        firstGoalShot = false;
+                    } else {
 
-                    shoot3times(flywheelPower);
+                     */
+                    /*
+                        intakeTop.setPower(0);
+
+                        for (int i = 0; i < 3; i += 1) {
 
 
-                }
+                            flywheelServo.setPosition(shooterServoFlickPos);
+
+                            sleep(350);
+                            intakeBottom.setPower(intakeBottomShooterPwr);
+                            if (i == 0) {
+                                flywheelShooter.setPower(flywheelPower * 1.075);
+                            }
+                            flywheelServo.setPosition(shooterServoRestPos);
+                            sleep(350);
+                            intakeBottom.setPower(0);
+
+                        }
+                        //sleep(500);
 
 
+                       // flywheelShooter.setPower(0);
+
+                     */
+                shoot3times(flywheelPower);
             }
 
-            if (gamepad1.dpad_right || gamepad2.dpad_up) flywheelShooter.setPower(flywheelPower);
+
+
+
+            if (gamepad1.dpad_right || gamepad2.dpad_up)
+                flywheelShooter.setPower(flywheelPower);
 
             if (gamepad1.dpad_down == true) flywheelShooter.setPower(0);
 
-            if (gamepad1.dpad_left == true){
+            if (gamepad1.dpad_left == true) {
                 flywheelServo.setPosition(shooterServoFlickPos);
                 sleep(500);
                 flywheelServo.setPosition(shooterServoRestPos);
             }
 
-            if (gamepad2.a){
-                calibMult -= 0.01;
+            if (gamepad2.b) {
+                targetRPMGoal -= 1;
                 sleep(100);
             }
 
-            if (gamepad2.b ){
-                calibMult += 0.01;
+            if (gamepad2.a) {
+                targetRPMGoal += 1;
                 sleep(100);
             }
+
+
 
             flywheelPower = calibPwr * calibMult;
 
 
-
-
-
-
             //double intakeToppwr = gamepad2.left_stick_y;
             //double intakeBottompwr = gamepad2.left_stick_y;
-            if (gamepad1.x == true){
+            if (gamepad1.x == true) {
 
                 intakeTop.setPower(-1 * intakeTopPwr);
                 intakeBottom.setPower(-1 * intakeBottomPwr);
 
             }
-            if (gamepad1.y == true){
-                double I1Pwr = 0;
-                double I2Pwr = 0 ;
+                /*
+                if (gamepad1.y == true) {
+                    double I1Pwr = 0;
+                    double I2Pwr = 0;
 
-                intakeTop.setPower(I1Pwr);
-                intakeBottom.setPower(I2Pwr);
-            }
+                    intakeTop.setPower(I1Pwr);
+                    intakeBottom.setPower(I2Pwr);
+                }
 
-            if (gamepad1.b == true){
+                 */
+
+            if (gamepad1.b == true) {
                 intakeBottom.setPower(intakeBottomPwr);
 /*
                 if (!IntakeCalibrated){
@@ -262,15 +350,15 @@ public class Comp1OpMode extends LinearOpMode {
                 }
 
  */
-               // if (intakePower > 0.85) intakePower = 0.85;
+                // if (intakePower > 0.85) intakePower = 0.85;
 
 
                 intakeTop.setPower(intakeTopPwr);
 
             }
 
-           // if (gamepad1.a == true){
-             //   shooterTrigger1x(-145);
+            // if (gamepad1.a == true){
+            //   shooterTrigger1x(-145);
                 /*
                 if (firstPS == true){
                     PowershotPower = shooterTrigger1x(-148);
@@ -279,98 +367,100 @@ public class Comp1OpMode extends LinearOpMode {
                 flywheelShooter.setPower(PowershotPower);
 
                  */
-          //  }
+            //  }
             //if (gamepad2.b) moveWPID(-9,0);
 
             //if (gamepad2.a); PowershotPower = shooterTrigger1x(-148);
 
 
-           // if (gamepad2.x) CommonMethodForArm();
+            // if (gamepad2.x) CommonMethodForArm();
 
-            if (gamepad2.x){
+            if (gamepad2.x) {
                 firstGoalShot = true;
                 calibMult = 1.0;
+                shooterRPMVars.isPowershot = false;
 
             }
 
 
-            if (gamepad1.a){
+            if (gamepad1.a) {
                 flywheelServo.setPosition(shooterServoFlickPos);
                 sleep(500);
                 flywheelServo.setPosition(shooterServoRestPos);
-                flywheelShooter.setPower(PowershotPower);
+                //flywheelShooter.setPower(PowershotPower);
             }
-            if (gamepad2.y){
-                    PowershotPower = shooterTrigger1xR(-150);
+            if (gamepad2.y) {
+                //PowershotPower = shooterTrigger1xR(-150);
+
+                shooterRPMVars.isPowershot = true;
+                shooterRPMVars.isValid = true;
 
             }
-            telemetry.addData("Target RPM = ", targetRPMGoal) ;
-            telemetry.addData("Mult = ", calibMult) ;
+            telemetry.addData("Target RPM = ", targetRPMGoal);
+            //   telemetry.addData("Mult = ", calibMult);
             telemetry.addData("First Shot = ", firstGoalShot);
-            telemetry.addData("Arm Motor Pos = " ,armMotor.getCurrentPosition() );
-            telemetry.addData("arm power = ", ArmPower);
+
+            //   telemetry.addData("Flywheel Power = ", flywheelPower);
+            // telemetry.addData("Current Power = ", shooterRPMVars.curPower);
 
             telemetry.update();
 
 
-
         }
-
 
 
     }
 
-    public double getRPMIntake (double waitTime){
-        ElapsedTime timer = new ElapsedTime ();
+    public double getRPMIntake(double waitTime) {
+        ElapsedTime timer = new ElapsedTime();
         double startFWCount = intakeTop.getCurrentPosition();
-        while (timer.milliseconds() < waitTime)
-        {
+        while (timer.milliseconds() < waitTime) {
         }
 
-        double timeVar = (250.0/waitTime);
+        double timeVar = (250.0 / waitTime);
         double deltaFW = intakeTop.getCurrentPosition() - startFWCount;
 
-        double RPM = timeVar * (deltaFW * 240)/537.6;
+        double RPM = timeVar * (deltaFW * 240) / 537.6;
 
         return RPM;
     }
 
-    public double SetRPMIntake (double targetRPM, double motorPower){
+    public double SetRPMIntake(double targetRPM, double motorPower) {
 
-        double time_step = 100.0 ;
+        double time_step = 100.0;
 
-        double time_step_mul = time_step / 50.0 ;
+        double time_step_mul = time_step / 50.0;
 
-        double kp = 0.0025  * 0.1 ;
-        double ki = (0.0025/50.0) * 0.1 * 0 ;
-        double kd = 0.0005  * 0;
+        double kp = 0.0025 * 0.1;
+        double ki = (0.0025 / 50.0) * 0.1 * 0;
+        double kd = 0.0005 * 0;
 
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
 
         double errorRPM = targetRPM + getRPMIntake(time_step);
         double curPower = motorPower;
-        double lastErr = 0 ;
-        double integralErr = 0 ;
-        int inLockCount = 0 ;
-        int loop_count = 0 ;
+        double lastErr = 0;
+        double integralErr = 0;
+        int inLockCount = 0;
+        int loop_count = 0;
         while (loop_count < 50) {
             double deltaError = errorRPM - lastErr;
-            lastErr = errorRPM ;
-            double time_int = timer.time() ;
+            lastErr = errorRPM;
+            double time_int = timer.time();
             timer.reset();
 
-            double derivative =  deltaError/time_int ;
+            double derivative = deltaError / time_int;
 
 
-            if (Math.abs(errorRPM) < 5 ) {
+            if (Math.abs(errorRPM) < 5) {
                 integralErr += errorRPM * time_int;
             } else {
-                integralErr += 0 ;
+                integralErr += 0;
 //                integralErr += ((errorRPM > 0) ? 5 * time_int : -5 * time_int) ;
             }
 
-            double deltaPower = -1 * time_step_mul * ((errorRPM * kp) + (integralErr * ki) +(derivative * kd)) ;
+            double deltaPower = -1 * time_step_mul * ((errorRPM * kp) + (integralErr * ki) + (derivative * kd));
 
             /* double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
                             (Math.abs(errorRPM) > 10)  ? 1.0/4.0 :
@@ -379,7 +469,7 @@ public class Comp1OpMode extends LinearOpMode {
 
              */
             double pwrMul = 1.0;
-            curPower += (deltaPower * pwrMul) ;
+            curPower += (deltaPower * pwrMul);
 
             //if (curPower > 0.7) curPower = 0.7 ;
             //if (curPower < -0.7) curPower = -0.7 ;
@@ -393,72 +483,100 @@ public class Comp1OpMode extends LinearOpMode {
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
 
-            if (Math.abs(errorRPM) <  5 ){
-                inLockCount += 1 ;
+            if (Math.abs(errorRPM) < 5) {
+                inLockCount += 1;
                 if (inLockCount > 5) {
                     return (curPower);
                 }
-            }
-            else {
-                inLockCount = 0 ;
+            } else {
+                inLockCount = 0;
             }
         }
         return (curPower);
     }
-    public double getRPM(double waitTime ){
-        ElapsedTime timer = new ElapsedTime ();
-        double startFWCount = flywheelShooter.getCurrentPosition();
-        while (timer.milliseconds() < waitTime)
-        {
+    public void shoot3times (double flywheelPower){
+        for (int i = 0; i < 3; i += 1) {
+
+
+            flywheelServo.setPosition(shooterServoFlickPos);
+            sleep(350);
+            //intakeBottom.setPower(intakeBottomShooterPwr);
+            if (i == 0 ) {
+                flywheelShooter.setPower(flywheelPower * 1.175);
+            }
+            if (i == 1 ){
+                flywheelShooter.setPower((flywheelPower * 1.175));
+            }
+            flywheelServo.setPosition(shooterServoRestPos);
+            sleep(350);
+            //  intakeBottom.setPower(0);
+
         }
 
-        double timeVar = (250.0/waitTime);
+        flywheelShooter.setPower(flywheelPower);
+        // flywheelShooter.setPower(0);
+    }
+
+
+    public double getRPM(double waitTime) {
+        ElapsedTime timer = new ElapsedTime();
+        double startFWCount = flywheelShooter.getCurrentPosition();
+        while (timer.milliseconds() < waitTime) {
+        }
+
+        double timeVar = (250.0 / waitTime);
         double deltaFW = flywheelShooter.getCurrentPosition() - startFWCount;
 
-        double RPM = timeVar * (deltaFW * 240)/537.6;
+        double RPM = timeVar * (deltaFW * 240) / 537.6;
 
         return RPM;
 
     }
 
 
-    public double SetRPM (double targetRPM, double motorPower){
-        double pwrMul = 1.0;
+    public double SetRPM(double targetRPM, double motorPower) {
+        //  if (!shooterRPMVars.isValid) return motorPower;
 
-        double time_step = 100.0 ;
+        if (!shooterRPMVars.inWhile) {
+            double pwrMul = shooterRPMVars.pwrMul;
 
-        double time_step_mul = time_step / 50.0 ;
+            double time_step = shooterRPMVars.time_step;
 
-        double kp = 0.0025  * 1 ;
-        double ki = (0.0025/50.0) * 0.1 * 1 ;
-        double kd = 0.0005  * 1;
+            double time_step_mul = shooterRPMVars.time_step_mul;
 
-        ElapsedTime timer = new ElapsedTime();
-        timer.reset();
-
-        double errorRPM = targetRPM + getRPM(time_step);
-        double curPower = motorPower;
-        double lastErr = 0 ;
-        double integralErr = 0 ;
-        int inLockCount = 0 ;
-        int loop_count = 0 ;
-        while (loop_count < 1000) {
-            double deltaError = errorRPM - lastErr;
-            lastErr = errorRPM ;
-            double time_int = timer.time() ;
-            timer.reset();
-
-            double derivative =  deltaError/time_int ;
+            double kp = shooterRPMVars.kp;
+            double ki = shooterRPMVars.ki;
+            double kd = shooterRPMVars.kd;
 
 
-            if (Math.abs(errorRPM) < 5 ) {
-                integralErr += errorRPM * time_int;
+            shooterRPMVars.errorRPM = targetRPM + getRPM(time_step);
+            shooterRPMVars.curPower = motorPower;
+            shooterRPMVars.lastErr = 0;
+            shooterRPMVars.integralErr = 0;
+            shooterRPMVars.inLockCount = 0;
+            shooterRPMVars.loop_count = 0;
+            shooterRPMVars.inWhile = true ;
+            shooterRPMVars.curTime = shooterRPMVars.timer.time() ;
+            shooterRPMVars.timer.reset();
+        }
+        else {
+            //              while (loop_count < 1000) {
+            shooterRPMVars.deltaError = shooterRPMVars.errorRPM - shooterRPMVars.lastErr;
+            shooterRPMVars.lastErr = shooterRPMVars.errorRPM;
+            double time_int = shooterRPMVars.timer.time();
+            shooterRPMVars.timer.reset();
+
+            double derivative = shooterRPMVars.deltaError / time_int;
+
+
+            if (Math.abs(shooterRPMVars.errorRPM) < 5) {
+                shooterRPMVars.integralErr += shooterRPMVars.errorRPM * time_int;
             } else {
-                integralErr += 0 ;
+                shooterRPMVars.integralErr += 0;
 //                integralErr += ((errorRPM > 0) ? 5 * time_int : -5 * time_int) ;
             }
 
-            double deltaPower = -1 * time_step_mul * ((errorRPM * kp) + (integralErr * ki) +(derivative * kd)) ;
+            double deltaPower = -1 * shooterRPMVars.time_step_mul * ((shooterRPMVars.errorRPM * shooterRPMVars.kp) + (shooterRPMVars.integralErr * shooterRPMVars.ki) + (derivative * shooterRPMVars.kd));
 
             /* double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
                             (Math.abs(errorRPM) > 10)  ? 1.0/4.0 :
@@ -466,14 +584,14 @@ public class Comp1OpMode extends LinearOpMode {
                                     (Math.abs(errorRPM) > 2.5)  ? 01.0/64.0 : (1.0/128.0) ;
 
              */
-            curPower += (deltaPower * pwrMul) ;
+            shooterRPMVars.curPower += (deltaPower * shooterRPMVars.pwrMul);
 
-            if (curPower > 0.7) curPower = 0.7 ;
-            if (curPower < -0.7) curPower = -0.7 ;
+            if (shooterRPMVars.curPower > 0.7) shooterRPMVars.curPower = 0.7;
+            if (shooterRPMVars.curPower < -0.7) shooterRPMVars.curPower = -0.7;
 
-            flywheelShooter.setPower(curPower);
-            double RPM = getRPM(time_step);
-            errorRPM = targetRPM + RPM;
+            flywheelShooter.setPower(shooterRPMVars.curPower);
+            double RPM = getRPM(shooterRPMVars.time_step);
+            shooterRPMVars.errorRPM = targetRPM + RPM;
             /*
             telemetry.addData("RPM = ", RPM);
             telemetry.addData("errorRPM = ", errorRPM);
@@ -483,27 +601,36 @@ public class Comp1OpMode extends LinearOpMode {
 
              */
 
-            if (Math.abs(errorRPM) < 1.5){
-                if(inLockCount >1){
-                    pwrMul = 0.5;
+            if (Math.abs(shooterRPMVars.errorRPM) < 1.5) {
+                if (shooterRPMVars.inLockCount > 1) {
+                    shooterRPMVars.pwrMul = 0.5;
                 }
-                inLockCount += 1 ;
-                if (inLockCount > 10) {
-                    return (curPower);
+                shooterRPMVars.inLockCount += 1;
+                if (shooterRPMVars.inLockCount > 5) {
+                    shooterRPMVars.inWhile = false;
+                    shooterRPMVars.isValid = false;
+                    return (shooterRPMVars.curPower);
+
                 }
+            } else {
+                shooterRPMVars.inLockCount = 0;
+                shooterRPMVars.pwrMul = 1.0;
             }
-            else {
-                inLockCount = 0 ;
-                pwrMul = 1.0;
-            }
+            //               }
         }
-        return (curPower);
+        if (shooterRPMVars.loop_count > 1000){
+            //shooterRPMVars.inWhile = false;
+            //shooterRPMVars.isValid = false;
+
+        }
+        return (shooterRPMVars.curPower);
     }
-    public void shooterTrigger3x (){
+
+    public void shooterTrigger3x() {
         double flywheelPower = 0.47;
 
-        for (int i = 0 ; i < 3 ; i += 1) {
-            double targetRPM = -155 ;
+        for (int i = 0; i < 3; i += 1) {
+            double targetRPM = -155;
             flywheelPower = SetRPM(targetRPM, flywheelPower);
             flywheelPower = 1.0 * flywheelPower;
             flywheelServo.setPosition(shooterServoFlickPos);
@@ -511,89 +638,63 @@ public class Comp1OpMode extends LinearOpMode {
             flywheelServo.setPosition(shooterServoRestPos);
 
         }
-        sleep(500) ;
+        sleep(500);
 
         flywheelShooter.setPower(0);
 
     }
-    public void shoot3times (double flywheelPower){
-        for (int i = 0; i < 3; i += 1) {
 
-
-            flywheelServo.setPosition(shooterServoFlickPos);
-            sleep(350);
-            intakeBottom.setPower(intakeBottomShooterPwr);
-            if (i == 0 ) {
-                flywheelShooter.setPower(flywheelPower * 1.175);
-            }
-            if (i == 1 ){
-                flywheelShooter.setPower((flywheelPower * 1.175));
-            }
-            flywheelServo.setPosition(shooterServoRestPos);
-            sleep(350);
-            intakeBottom.setPower(0);
-
-        }
-
-
-        flywheelShooter.setPower(0);
-    }
-    public double shooterTrigger3xNP ( double flywheelPower, double targetRPMGoal){
+    public double shooterTrigger3xNP(double flywheelPower, double targetRPMGoal, SetRPMVars shooterRPMVars) {
         intakeTop.setPower(0);
-
-        flywheelPower = SetRPM(targetRPMGoal, flywheelPower);
-        telemetry.addData("Target RPM = ", targetRPMGoal) ;
+        shooterRPMVars.isValid = true;
+        SetRPM(targetRPMGoal, flywheelPower );
+        telemetry.addData("Target RPM = ", targetRPMGoal);
         telemetry.update();
-/*
+
         for (int i = 0; i < 3; i += 1) {
-
-
-            flywheelServo.setPosition(shooterServoFlickPos);
-            sleep(350);
-            intakeBottom.setPower(intakeBottomShooterPwr);
-            if (i == 0 ) {
-                flywheelShooter.setPower(flywheelPower * 1.25);
-            }
-            if (i == 1 ){
-                flywheelShooter.setPower((flywheelPower * 1.25));
-            }
-            flywheelServo.setPosition(shooterServoRestPos);
-            sleep(350);
-            intakeBottom.setPower(0);
-
-        }
-
- */
-        shoot3times(flywheelPower);
-
-      //  intakeTop.setPower(0);
-
-
-
-
-        return(flywheelPower);
-
-    }
-    public void shooterTrigger1x (double targetRPM){
-
-
-            double flywheelPower = 0.47;
-            flywheelPower = SetRPM(targetRPM, flywheelPower);
-            flywheelPower = 1.02 * flywheelPower;
             flywheelServo.setPosition(shooterServoFlickPos);
             sleep(500);
+            intakeBottom.setPower(intakeBottomShooterPwr);
+
+            flywheelShooter.setPower(flywheelPower * 1.075);
             flywheelServo.setPosition(shooterServoRestPos);
-           // return (flywheelPower);
-            //sleep(0) ;
+            sleep(500);
+            intakeBottom.setPower(0);
+
+        }
+        sleep(500);
+
+
+        flywheelShooter.setPower(0);
+        //  intakeTop.setPower(0);
+
+
+        return (flywheelPower);
+
     }
-    public double shooterTrigger1xR (double targetRPM){
+
+    public void shooterTrigger1x(double targetRPM) {
+
+
+        double flywheelPower = 0.47;
+        flywheelPower = SetRPM(targetRPM, flywheelPower);
+        flywheelPower = 1.02 * flywheelPower;
+        flywheelServo.setPosition(shooterServoFlickPos);
+        sleep(500);
+        flywheelServo.setPosition(shooterServoRestPos);
+        // return (flywheelPower);
+        //sleep(0) ;
+    }
+
+    public double shooterTrigger1xR(double targetRPM) {
         double flywheelPower = 0.47;
         flywheelPower = SetRPM(targetRPM, flywheelPower);
         flywheelPower = 1.0 * flywheelPower;
-         return (flywheelPower);
+        return (flywheelPower);
         //sleep(0) ;
     }
-    public void moveWPID (double targetXInches, double targetYInches){
+
+    public void moveWPID(double targetXInches, double targetYInches) {
 
 
         frontLeft.setPower(0);
@@ -608,8 +709,8 @@ public class Comp1OpMode extends LinearOpMode {
         // get starting X and Y position from encoders
         // and solving from equation
 
-        double initialYPos = ( backLeft.getCurrentPosition() + backRight.getCurrentPosition())/2;
-        double initialXPos = ( backRight.getCurrentPosition() - backLeft.getCurrentPosition())/2;
+        double initialYPos = (backLeft.getCurrentPosition() + backRight.getCurrentPosition()) / 2;
+        double initialXPos = (backRight.getCurrentPosition() - backLeft.getCurrentPosition()) / 2;
         // adding Count + initial
         double targetXPos = targetXCount + initialXPos;
         double targetYPos = targetYCount + initialYPos;
@@ -621,13 +722,13 @@ public class Comp1OpMode extends LinearOpMode {
         double kd = 0.0005;
         double integralX = 0;
         double integralY = 0;
-        double finalGain = 5 ;
+        double finalGain = 5;
 
         double errorX = targetXPos - currentXPos;
         double errorY = targetYPos - currentYPos;
 
-        boolean movementDoneX = (Math.abs(errorX)<25) ;
-        boolean movementDoneY = (Math.abs(errorY)<25) ;
+        boolean movementDoneX = (Math.abs(errorX) < 25);
+        boolean movementDoneY = (Math.abs(errorY) < 25);
 
         double lastXError = 0;
         double lastYError = 0;
@@ -639,7 +740,7 @@ public class Comp1OpMode extends LinearOpMode {
         double minPowerY = 0;
         double deltaKX = 1;
         double deltaKY = 1;
-        boolean firstPass = true ;
+        boolean firstPass = true;
 
 
         double curPowerLF = 0;
@@ -649,20 +750,20 @@ public class Comp1OpMode extends LinearOpMode {
 
         ElapsedTime timer = new ElapsedTime();
         // start loop while any error is > some number
-        while ((!movementDoneX || !movementDoneY) ){
+        while ((!movementDoneX || !movementDoneY)) {
 
             double deltaXError = firstPass ? 0 : errorX - lastXError;
             double deltaYError = firstPass ? 0 : errorY - lastYError;
 
-            firstPass = false ;
+            firstPass = false;
 
             double curTime = timer.time();
 
             integralX += errorX * curTime;
             integralY += errorY * curTime;
 
-            double derivativeX = deltaXError/curTime;
-            double derivativeY = deltaYError/curTime;
+            double derivativeX = deltaXError / curTime;
+            double derivativeY = deltaYError / curTime;
 
 
             timer.reset();
@@ -677,33 +778,34 @@ public class Comp1OpMode extends LinearOpMode {
             curPowerY = finalGain * deltaYPower;
             double powerLowThreshMul = 0;
 
-            if (((Math.abs(curPowerX)) > minPowerX )  ||  ((Math.abs(curPowerY)) > minPowerY)) powerLowThreshMul = 1;
+            if (((Math.abs(curPowerX)) > minPowerX) || ((Math.abs(curPowerY)) > minPowerY))
+                powerLowThreshMul = 1;
 
-            double usePwrX = powerLowThreshMul * curPowerX ;
-            double usePwrY = powerLowThreshMul * curPowerY ;
+            double usePwrX = powerLowThreshMul * curPowerX;
+            double usePwrY = powerLowThreshMul * curPowerY;
 
             if (curPowerX > capPowerX) usePwrX = capPowerX;
-            if (curPowerX < (-1 *capPowerX)) usePwrX = -1 * capPowerX;
+            if (curPowerX < (-1 * capPowerX)) usePwrX = -1 * capPowerX;
 
             if (curPowerY > capPowerY) usePwrY = capPowerY;
 
             if (curPowerY < (-1 * capPowerY)) usePwrY = -1 * capPowerY;
 
-            double PwrRatioX = (curPowerX != 0) ? Math.abs(usePwrX/curPowerX) : 0  ;
-            double PwrRatioY = (curPowerY != 0) ? Math.abs(usePwrY/curPowerY) : 0 ;
+            double PwrRatioX = (curPowerX != 0) ? Math.abs(usePwrX / curPowerX) : 0;
+            double PwrRatioY = (curPowerY != 0) ? Math.abs(usePwrY / curPowerY) : 0;
 
             if (PwrRatioX != PwrRatioY) {
                 if ((PwrRatioX != 0) && (PwrRatioX < PwrRatioY)) {
-                    usePwrY = PwrRatioX * usePwrY / PwrRatioY  ;
+                    usePwrY = PwrRatioX * usePwrY / PwrRatioY;
                 }
                 if ((PwrRatioY != 0) && (PwrRatioY < PwrRatioX)) {
-                    usePwrX = PwrRatioY * usePwrX / PwrRatioX  ;
+                    usePwrX = PwrRatioY * usePwrX / PwrRatioX;
                 }
 
             }
 
-            usePwrX = (!movementDoneX) ? usePwrX : 0 ;
-            usePwrY = (!movementDoneY) ? usePwrY : 0 ;
+            usePwrX = (!movementDoneX) ? usePwrX : 0;
+            usePwrY = (!movementDoneY) ? usePwrY : 0;
 
             curPowerLF = usePwrY + usePwrX;
             curPowerLB = usePwrY - usePwrX;
@@ -718,34 +820,33 @@ public class Comp1OpMode extends LinearOpMode {
 
             sleep(50);
 
-            double posBL = backLeft.getCurrentPosition() ;
-            double posBR = backRight.getCurrentPosition() ;
+            double posBL = backLeft.getCurrentPosition();
+            double posBR = backRight.getCurrentPosition();
 
-            double posFL = frontLeft.getCurrentPosition() ;
-            double posFR = frontRight.getCurrentPosition() ;
+            double posFL = frontLeft.getCurrentPosition();
+            double posFR = frontRight.getCurrentPosition();
 
-            currentYPos = (posBL  + posBR)/2;
-            currentXPos = ( posBR - posBL)/2;
+            currentYPos = (posBL + posBR) / 2;
+            currentXPos = (posBR - posBL) / 2;
 
-            errorX = (targetXPos - currentXPos) ;
+            errorX = (targetXPos - currentXPos);
             errorY = (targetYPos - currentYPos);
 
 
             lastXError = errorX;
             lastYError = errorY;
 
-            movementDoneX = (Math.abs(errorX)<100) || movementDoneX;
-            movementDoneY = (Math.abs(errorY)<100) || movementDoneY;
+            movementDoneX = (Math.abs(errorX) < 100) || movementDoneX;
+            movementDoneY = (Math.abs(errorY) < 100) || movementDoneY;
 
-            telemetry.addData("ErrX = ", errorX) ;
-            telemetry.addData("ErrY = ", errorY) ;
+            telemetry.addData("ErrX = ", errorX);
+            telemetry.addData("ErrY = ", errorY);
             telemetry.addData("Front Left Encoder =", posFL);
             telemetry.addData("Front Right Encoder ", posFR);
             telemetry.addData("Back Left Encoder", posBL);
-            telemetry.addData("Back Right Encoder =" , posBR);
-            telemetry.addData("Power ratio x =" , PwrRatioX);
-            telemetry.addData("Power ratio y =" , PwrRatioY);
-
+            telemetry.addData("Back Right Encoder =", posBR);
+            telemetry.addData("Power ratio x =", PwrRatioX);
+            telemetry.addData("Power ratio y =", PwrRatioY);
 
 
             telemetry.update();
@@ -753,12 +854,12 @@ public class Comp1OpMode extends LinearOpMode {
 
         }
 
-        double rampMul = 1.0 ;
+        double rampMul = 1.0;
 
-        for (int i =0 ; i < 5 ; i++) {
-            rampMul -= 0.2 ;
-            frontLeft.setPower(curPowerLF * rampMul );
-            frontRight.setPower(curPowerRF *rampMul );
+        for (int i = 0; i < 5; i++) {
+            rampMul -= 0.2;
+            frontLeft.setPower(curPowerLF * rampMul);
+            frontRight.setPower(curPowerRF * rampMul);
 
             backRight.setPower(curPowerRB * rampMul);
             backLeft.setPower(curPowerLB * rampMul);
@@ -767,35 +868,37 @@ public class Comp1OpMode extends LinearOpMode {
 
 
     }
-    public void Powershots (){
+
+    public void Powershots() {
         shooterTrigger1x(-150);
-        moveWPID(-9.5,0);
+        moveWPID(-9.5, 0);
         shooterTrigger1x(-150);
-        moveWPID(-8.5,0);
+        moveWPID(-8.5, 0);
         shooterTrigger1x(-150);
         sleep(500);
         flywheelShooter.setPower(0);
 
 
     }
-    public void PowershotsFast (){
+
+    public void PowershotsFast() {
         double flywheelPower = 0.47;
         double targetRPM = -150;
         flywheelPower = SetRPM(targetRPM, flywheelPower);
-        for (int i = 0 ; i < 3 ; i += 1) {
+        for (int i = 0; i < 3; i += 1) {
             flywheelServo.setPosition(shooterServoFlickPos);
             sleep(500);
-            flywheelShooter.setPower(flywheelPower * 1.075 );
+            flywheelShooter.setPower(flywheelPower * 1.075);
             flywheelServo.setPosition(shooterServoRestPos);
             sleep(500);
-            moveWPID(-9,0);
-
+            moveWPID(-9, 0);
 
 
         }
 
 
     }
+
     public void ArmEncoders(double speed, double distance, int timeoutInMilliseconds) {
         int newArmTarget;
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -855,6 +958,10 @@ public class Comp1OpMode extends LinearOpMode {
 
     }
 
+    
+
+
 
 
 }
+

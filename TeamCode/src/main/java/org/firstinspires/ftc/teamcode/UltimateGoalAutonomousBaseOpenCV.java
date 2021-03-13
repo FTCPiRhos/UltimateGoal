@@ -46,18 +46,27 @@ import java.util.List;
 public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     /* Declare OpMode members. */
-    protected DcMotor frontLeft, frontRight, backLeft, backRight, flywheelShooter, armMotor;
+    protected DcMotor frontLeft, frontRight, backLeft, backRight, flywheelShooter, armMotor, intakeTop, intakeBottom;
     protected Servo armServo, flywheelServo;
 
     protected ElapsedTime runtime = new ElapsedTime();
 
-    static final double COUNTS_PER_MOTOR_REV = 537.6;    // eg: TETRIX Motor Encoder
+    static final double COUNTS_PER_MOTOR_REV = 537.6;// eg: TETRIX Motor Encoder
+    static final double COUNTS_PER_ARM_MOTOR_REV = 2786;
     static final double DRIVE_GEAR_REDUCTION = 2.0 / 2;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 3.937;   // For figuring circumference - 100mm
     static final double COUNTS_PER_INCH = 1.45 * (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
+    static final double COUNTS_PER_ARM_INCH = COUNTS_PER_ARM_MOTOR_REV * 1.5 * 3.1415;
     static final double DRIVE_SPEED_SLOW = 0.4;
     static final double DRIVE_SPEED = 0.7;
+    double intakeBottomPwr = -0.7;
+    double intakeTopPwr = 0.5;
+    double intakeBottomShooterPwr = -0.3;
+// ARM RANGE = 1400 COUNTS
+
+    double intakeTopMaxPwr = 0.6;
+    double intakeBottomMaxPwr = -0.775;
 
     //OpenCV related initalization
     OpenCvInternalCamera webcam;
@@ -81,7 +90,10 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         backRight = hardwareMap.get(DcMotor.class, "right_back");
         armMotor = hardwareMap.get(DcMotor.class, "arm_motor");
         armServo = hardwareMap.get(Servo.class,"arm_servo");
-
+        intakeTop = hardwareMap.get(DcMotor.class,"intake2");
+        intakeBottom = hardwareMap.get(DcMotor.class,"intake1");
+        intakeTop.setDirection(DcMotor.Direction.FORWARD);
+        intakeBottom.setDirection(DcMotor.Direction.REVERSE);
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -100,6 +112,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         flywheelShooter.setDirection(DcMotorSimple.Direction.REVERSE);
 
         flywheelServo = hardwareMap.get(Servo.class, "flywheel_servo");
+        flywheelServo.setPosition(0.6);
 
         //Rotation related
         pidRotate = new PIDController( .003, .00003, 0);
@@ -218,7 +231,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
             if (Math.abs(errorRPM) <  2 ){
                 inLockCount += 1 ;
-                if (inLockCount > 5) {
+                if (inLockCount > 10) {
                     return (curPower);
                 }
             }
@@ -277,7 +290,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         return (curPower);
     }
 
-    public void moveWPID (double targetXInches, double targetYInches){
+    public void moveWPID (double targetXInches, double targetYInches, double maxPwr){
 
 
         frontLeft.setPower(0);
@@ -317,8 +330,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         double lastYError = 0;
         double curPowerX = 0;
         double curPowerY = 0;
-        double capPowerX = .75;
-        double capPowerY = .75;
+        double capPowerX = maxPwr;
+        double capPowerY = maxPwr;
         double minPowerX = 0;
         double minPowerY = 0;
         double deltaKX = 1;
@@ -332,9 +345,12 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         double curPowerRF = 0;
         double curPowerRB = 0;
 
+        double constantPowerX = fPosX ? 0.20 : -0.20;
+        double constantPowerY = fposY ? 0.20 : -0.20;
+
         if ((Math.abs(targetXInches) + Math.abs(targetYInches)) <25){
-            capPowerX = 1.0;
-            capPowerY = 1.0;
+            capPowerX = maxPwr;
+            capPowerY = maxPwr;
         }
         ElapsedTime timer = new ElapsedTime();
         // start loop while any error is > some number
@@ -363,8 +379,10 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             double deltaXPower = deltaKX * ((errorX * kp) + (integralX * ki) + (derivativeX * kd));
             double deltaYPower = deltaKY * ((errorY * kp) + (integralY * ki) + (derivativeY * kd));
 
-            curPowerX = finalGain * deltaXPower;
-            curPowerY = finalGain * deltaYPower;
+
+
+            curPowerX = finalGain * (deltaXPower * 0.8 + constantPowerX) ;
+            curPowerY = finalGain * (deltaYPower * 0.8 + constantPowerY);
             double powerLowThreshMul = 0;
 
             if (((Math.abs(curPowerX)) > minPowerX )  ||  ((Math.abs(curPowerY)) > minPowerY)) powerLowThreshMul = 1;
@@ -376,7 +394,6 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             if (curPowerX < (-1 *capPowerX)) usePwrX = -1 * capPowerX;
 
             if (curPowerY > capPowerY) usePwrY = capPowerY;
-
             if (curPowerY < (-1 * capPowerY)) usePwrY = -1 * capPowerY;
 
             double PwrRatioX = (curPowerX != 0) ? Math.abs(usePwrX/curPowerX) : 0  ;
@@ -666,7 +683,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
             // Determine new target position, and pass to motor controller
 
-            newArmTarget = armMotor.getCurrentPosition() + (int) (distance * COUNTS_PER_INCH);
+            newArmTarget = armMotor.getCurrentPosition() + (int) (distance * COUNTS_PER_ARM_INCH);
             armMotor.setTargetPosition(newArmTarget);
 
             // Turn On RUN_TO_POSITION
@@ -704,13 +721,66 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         }
     }
 
-        protected void CommonMethodForArm() {
+    protected void ArmEncodersNew (double speed, double distance, int timeoutInMilliseconds) {
+        int newArmTarget;
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-            ArmEncoders(0.7, -0.88, 10000);
-            sleep(750);
+        // Ensure that the opmode is still active
+        if (opModeIsActive()) {
+
+            // Determine new target position, and pass to motor controller
+
+            newArmTarget = armMotor.getCurrentPosition() + (int) (distance);
+            armMotor.setTargetPosition(newArmTarget);
+
+
+            // Turn On RUN_TO_POSITION
+            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            // reset the timeout time and start motion.
+            runtime.reset();
+
+            armMotor.setPower(speed);
+
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+            // its target position, the motion will stop.  This is "safer" in the event that the robot will
+            // always end the motion as soon as possible.
+            // However, if you require that BOTH motors have finished their moves before the robot continues
+            // onto the next step, use (isBusy() || isBusy()) in the loop test.
+            while (opModeIsActive() && (runtime.milliseconds() < timeoutInMilliseconds) &&
+                    (armMotor.isBusy())) {
+
+                speed = (armMotor.getCurrentPosition() > 1000 && (speed >=0.1)) ? 0.1 :
+                        (armMotor.getCurrentPosition() <-1000  && (speed < -0.10)) ? -0.1 : speed ;
+
+                // Display it for the driver.
+                telemetry.addData("Path1", "Running to %7d", newArmTarget);
+                telemetry.addData("Path2", "Running at %7d", armMotor.getCurrentPosition());
+
+                telemetry.update();
+            }
+
+            // Stop all motion;
+            armMotor.setPower(0);
+
+
+            // Turn off RUN_TO_POSITION
+            armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
+            //  sleep(250);   // optional pause after each move
+        }
+    }
+
+
+    protected void CommonMethodForArm() {
+
+            ArmEncodersNew(1, 1350, 10000);
+            sleep(250);
             armServo.setPosition(0);
-            moveWPID(8, 0);
-            ArmEncoders(0.7, 1.3, 10000);
+            moveWPID(8, 0,0.75);
+            ArmEncodersNew(1, -1350, 10000);
             armServo.setPosition(1);
 
 
@@ -827,8 +897,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
                 AnglePrecToSlowDown =0.6;
 
             if(getAngle() > AnglePrecToSlowDown * degrees ) {
-                double diff = degrees - getAngle();
-                double modifier = 0.2 + 0.3 * ( diff/ degrees );
+                double diff = Math.abs(degrees - getAngle());
+                double modifier = 0.25 + 0.7 * ( diff/ 180 );
                 frontRight.setPower(rightPower * modifier );
                 backLeft.setPower(leftPower * modifier);
                 frontLeft.setPower(leftPower * modifier);
@@ -891,9 +961,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     public void Powershots (){
         shooterTrigger1x(-124);
-        moveWPID(-10.5,0);
+        moveWPID(-10.5,0,0.75);
         shooterTrigger1x(-124);
-        moveWPID(-9,0);
+        moveWPID(-9,0,0.75);
         shooterTrigger1x(-124);
 
     }
@@ -942,7 +1012,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         sleep(500);
 
 
-        moveWPID(-7.5,0);
+        moveWPID(-7.5,0,0.75);
         sleep(500);
 
         flywheelServo.setPosition(0.5);
@@ -951,7 +1021,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         flywheelShooter.setPower(PSPower * 1.02);
         sleep(500);
 
-        moveWPID(-8.25,0);
+        moveWPID(-8.25,0,0.75);
         sleep(500);
 
         flywheelServo.setPosition(0.5);
@@ -962,27 +1032,56 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         stop();
     }
 
-    public void shooterTrigger3xNP (){
+    public double shooterTrigger3xNP (){
         double flywheelPower = 0.47;
-        double targetRPM = -157.5 ;
+        double targetRPM = -162 ;
         flywheelPower = SetRPM(targetRPM, flywheelPower);
 
-        for (int i = 0 ; i < 3 ; i += 1) {
-            flywheelServo.setPosition(0.5);
-            sleep(500);
-            flywheelShooter.setPower(flywheelPower * 1.1);
+        for (int i = 0; i < 3; i += 1) {
+
+
             flywheelServo.setPosition(1);
-            sleep(500);
-
-
+            sleep(350);
+            intakeBottom.setPower(intakeBottomShooterPwr);
+            if (i == 0 ) {
+                flywheelShooter.setPower(flywheelPower * 1.15);
+            }
+            if (i == 1 ){
+                flywheelShooter.setPower((flywheelPower * 1.15));
+            }
+            flywheelServo.setPosition(0.6);
+            sleep(350);
+            intakeBottom.setPower(0);
 
         }
         sleep(500) ;
 
         flywheelShooter.setPower(0);
 
-    }
+        return flywheelPower;
 
+    }
+    public void intakeOn() {
+        intakeTop.setPower(-1 * intakeTopPwr);
+        intakeBottom.setPower(-1 * intakeBottomPwr);
+
+    }
+    public void intakeOff(){
+        double I1Pwr = 0;
+        double I2Pwr = 0 ;
+
+        intakeTop.setPower(I1Pwr);
+        intakeBottom.setPower(I2Pwr);
+    }
+    public void intakeReverse(){
+        intakeTop.setPower(intakeTopPwr);
+        intakeBottom.setPower(intakeBottomPwr);
+    }
+    public void intakeOnFast(){
+        intakeTop.setPower(-1 * intakeTopMaxPwr);
+        intakeBottom.setPower(-1 * intakeBottomMaxPwr);
+
+    }
 
 }
 
