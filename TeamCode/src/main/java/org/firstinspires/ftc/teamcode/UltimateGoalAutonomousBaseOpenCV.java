@@ -1034,7 +1034,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     public double shooterTrigger3xNP (){
         double flywheelPower = 0.47;
-        double targetRPM = -162 ;
+        double targetRPM = -172.5 ;
         flywheelPower = SetRPM(targetRPM, flywheelPower);
 
         for (int i = 0; i < 3; i += 1) {

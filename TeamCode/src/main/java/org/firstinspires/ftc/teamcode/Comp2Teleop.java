@@ -66,9 +66,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
                 (WHEEL_DIAMETER_INCHES * 3.1415);
         static final double DRIVE_SPEED_SLOW = 0.4;
         static final double DRIVE_SPEED = 0.7;
-        double intakeBottomShooterPwr = 0.5;
-        double intakeBottomPwr = -0.7;
-        double intakeTopPwr = 0.5;
+        double intakeBottomShooterPwr = 0.7;
+        double intakeBottomPwr = -0.8;
+        double intakeTopPwr = 0.7;
         double shooterServoRestPos = 0.6;
         double shooterServoFlickPos = 1.0;
         double calibPwr;
@@ -144,7 +144,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
             double intakePower;
             double PowershotPower = 0;
             boolean firstPS = true;
-            double targetRPMGoal = -158.5;
+            double targetRPMGoal = -173.5;
             boolean firstGoalShot = true;
 
             while (opModeIsActive()) {
@@ -158,7 +158,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
                         flywheelPower = shooterRPMVars.curPower;
                     }
                 else if (shooterRPMVars.isPowershot){
-                    SetRPM(-150,flywheelPower);
+                    SetRPM(-155,flywheelPower);
                 }
 
                 intakePower = 1.6 * flywheelPower;
@@ -307,7 +307,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
                     intakeBottom.setPower(-1 * intakeBottomPwr);
 
                 }
-                /*
+/*
                 if (gamepad1.y == true) {
                     double I1Pwr = 0;
                     double I2Pwr = 0;
@@ -315,8 +315,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
                     intakeTop.setPower(I1Pwr);
                     intakeBottom.setPower(I2Pwr);
                 }
+
+ */
                 
-                 */
+                 
 
                 if (gamepad1.b == true) {
                     intakeBottom.setPower(intakeBottomPwr);
