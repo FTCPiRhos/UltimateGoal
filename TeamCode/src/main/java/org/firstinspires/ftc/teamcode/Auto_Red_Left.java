@@ -10,6 +10,7 @@ public class Auto_Red_Left extends UltimateGoalAutonomousBaseOpenCV{
 
         // Initialize hardware
         initHardware(true);
+
        // flywheelServo.setPosition(1);
         armServo.setPosition(1);
        // flywheelServo.setPosition(0.55);
