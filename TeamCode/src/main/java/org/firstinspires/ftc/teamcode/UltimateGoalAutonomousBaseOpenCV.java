@@ -1031,6 +1031,33 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         flywheelShooter.setPower(0);
         stop();
     }
+    public double shooterTrigger3xNPnew (double flywheelPower){
+
+        for (int i = 0; i < 3; i += 1) {
+
+
+            flywheelServo.setPosition(1);
+            sleep(350);
+            intakeBottom.setPower(intakeBottomShooterPwr);
+            if (i == 0 ) {
+                flywheelShooter.setPower(flywheelPower * 1.15);
+            }
+            if (i == 1 ){
+                flywheelShooter.setPower((flywheelPower * 1.15));
+            }
+            flywheelServo.setPosition(0.6);
+            sleep(350);
+            intakeBottom.setPower(0);
+
+        }
+        sleep(500) ;
+
+        flywheelShooter.setPower(0);
+
+        return flywheelPower;
+
+    }
+
 
     public double shooterTrigger3xNP (){
         double flywheelPower = 0.47;

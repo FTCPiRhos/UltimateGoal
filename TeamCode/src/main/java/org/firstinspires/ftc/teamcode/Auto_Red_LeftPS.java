@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 @Autonomous(name="Auto Red Left PS", group="PiRhos")
- public class Auto_Red_LeftPS extends UltimateGoalAutonomousBaseOpenCV{
+@Disabled public class Auto_Red_LeftPS extends UltimateGoalAutonomousBaseOpenCV{
 
     @Override
 

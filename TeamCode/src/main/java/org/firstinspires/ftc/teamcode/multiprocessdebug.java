@@ -4,9 +4,9 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name="Auto Red Left1", group="PiRhos")
+@Autonomous(name="Auto Red Left2", group="PiRhos")
 
-public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV {
+@Disabled public class multiprocessdebug extends UltimateGoalAutonomousBaseOpenCV {
     class SetRPMVars {
         ElapsedTime timer = new ElapsedTime();
         boolean isValid = false;
@@ -33,7 +33,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
         int loop_count = 0;
     }
 
-    private Auto_Red_Left_multiprocess.SetRPMVars shooterRPMVars = new Auto_Red_Left_multiprocess.SetRPMVars();
+    private multiprocessdebug.SetRPMVars shooterRPMVars = new multiprocessdebug.SetRPMVars();
 
     class MoveWPIDVars {
         ElapsedTime timer = new ElapsedTime();
@@ -107,7 +107,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
         double loopcount;
     }
 
-    private Auto_Red_Left_multiprocess.MoveWPIDVars moveWPIDVars = new Auto_Red_Left_multiprocess.MoveWPIDVars();
+    private multiprocessdebug.MoveWPIDVars moveWPIDVars = new multiprocessdebug.MoveWPIDVars();
 
     double targetRPMGoal = -172.5;
     double flywheelPower = 0.6;
@@ -138,9 +138,9 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
             }
             telemetry.addData("command = ", commandCount);
             telemetry.update();
-
+/*
             if (commandCount == 1) {
-                moveWPIDnew(-24, 0, 0.75);
+                moveWPIDnew(-22, 0, 0.75);
                 if (!moveWPIDVars.inMove) commandCount++;
             }
             if (commandCount == 2) {
@@ -155,62 +155,63 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
             if (objectFound.equals(OpenCVTestPipeline.RingPosition.NONE)) {
                 if (commandCount == 3) {
                     rotate(90, .8);
+                    if (!moveWPIDVars.inMove) commandCount++;
+                }
 
-
-
-                    moveWPID(5, -3, 0.75);
-
-
-
+                if (commandCount == 4) {
+                    moveWPIDnew(5, -3, 0.75);
+                    if (!moveWPIDVars.inMove) commandCount++;
+                }
+                if (commandCount == 5) {
                     ArmEncodersNew(0.75, 1350, 10000);
                     sleep(500);
                     armServo.setPosition(0);
+                    commandCount++;
+                }
 
+                if (commandCount == 6) {
+                    moveWPIDnew(8, 0, 0.75);
+                    if (!moveWPIDVars.inMove) commandCount++;
 
+                }
+                if (commandCount == 7) {
+                    moveWPIDnew(-3, 5, 0.75);
+                    if (!moveWPIDVars.inMove) commandCount++;
 
+                }
+                if (commandCount == 8){
+                    moveWPIDnew(-70, 0, 0.75);
+                    if (!moveWPIDVars.inMove) commandCount++;
 
-                    moveWPID(8, 0, 0.75);
-
-
-
-
-                    moveWPID(-3, 5, 0.75);
-
-
-
-
-                    moveWPID(-70, 0, 0.75);
-
-
-
-
+                }
+                if (commandCount == 9) {
                     armServo.setPosition(1);
                     sleep(1000);
+                    commandCount++;
+                }
+                if (commandCount == 10) {
+                    moveWPIDnew(64, -5, 0.75);
+                    if (!moveWPIDVars.inMove) commandCount++;
 
-
-
-                    moveWPID(64, -5, 0.75);
-
-
-
-
+                }
+                if (commandCount == 11) {
                     armServo.setPosition(0);
                     sleep(500);
+                    commandCount++;
+                }
+                if (commandCount == 12) {
+                    moveWPIDnew(8, 0, 0.75);
+                    if (!moveWPIDVars.inMove) commandCount++;
 
-
-                    moveWPID(8, 0, 0.75);
-
-
-
-
+                }
+                if (commandCount == 13) {
                     ArmEncodersNew(0.3, -1350, 10000);
                     armServo.setPosition(1);
-
-
-
-                    moveWPID(-3, 5, 0.75);
-
-                    sleep(500);
+                    commandCount++;
+                }
+                if (commandCount == 14) {
+                    moveWPIDnew(-3, 5, 0.75);
+                    if (!moveWPIDVars.inMove) commandCount++;
                     stop();
                 }
 
@@ -351,6 +352,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
                 }
 
             }
+            */
 
 
 
@@ -551,49 +553,49 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
     }
 
 
-        public double SetRPMnew ( double targetRPM, double motorPower){
-            //  if (!shooterRPMVars.isValid) return motorPower;
+    public double SetRPMnew ( double targetRPM, double motorPower){
+        //  if (!shooterRPMVars.isValid) return motorPower;
 
-            if (!shooterRPMVars.inWhile) {
-                double pwrMul = shooterRPMVars.pwrMul;
+        if (!shooterRPMVars.inWhile) {
+            double pwrMul = shooterRPMVars.pwrMul;
 
-                double time_step = shooterRPMVars.time_step;
+            double time_step = shooterRPMVars.time_step;
 
-                double time_step_mul = shooterRPMVars.time_step_mul;
+            double time_step_mul = shooterRPMVars.time_step_mul;
 
-                double kp = shooterRPMVars.kp;
-                double ki = shooterRPMVars.ki;
-                double kd = shooterRPMVars.kd;
+            double kp = shooterRPMVars.kp;
+            double ki = shooterRPMVars.ki;
+            double kd = shooterRPMVars.kd;
 
 
-                shooterRPMVars.errorRPM = targetRPM + getRPM(time_step);
-                shooterRPMVars.curPower = motorPower;
-                shooterRPMVars.lastErr = 0;
-                shooterRPMVars.integralErr = 0;
-                shooterRPMVars.inLockCount = 0;
-                shooterRPMVars.loop_count = 0;
-                shooterRPMVars.inWhile = true;
-                shooterRPMVars.curTime = shooterRPMVars.timer.time();
-                shooterRPMVars.timer.reset();
+            shooterRPMVars.errorRPM = targetRPM + getRPM(time_step);
+            shooterRPMVars.curPower = motorPower;
+            shooterRPMVars.lastErr = 0;
+            shooterRPMVars.integralErr = 0;
+            shooterRPMVars.inLockCount = 0;
+            shooterRPMVars.loop_count = 0;
+            shooterRPMVars.inWhile = true;
+            shooterRPMVars.curTime = shooterRPMVars.timer.time();
+            shooterRPMVars.timer.reset();
+        } else {
+
+            //              while (loop_count < 1000) {
+            shooterRPMVars.deltaError = shooterRPMVars.errorRPM - shooterRPMVars.lastErr;
+            shooterRPMVars.lastErr = shooterRPMVars.errorRPM;
+            double time_int = shooterRPMVars.timer.time();
+            shooterRPMVars.timer.reset();
+
+            double derivative = shooterRPMVars.deltaError / time_int;
+
+
+            if (Math.abs(shooterRPMVars.errorRPM) < 5) {
+                shooterRPMVars.integralErr += shooterRPMVars.errorRPM * time_int;
             } else {
-
-                //              while (loop_count < 1000) {
-                shooterRPMVars.deltaError = shooterRPMVars.errorRPM - shooterRPMVars.lastErr;
-                shooterRPMVars.lastErr = shooterRPMVars.errorRPM;
-                double time_int = shooterRPMVars.timer.time();
-                shooterRPMVars.timer.reset();
-
-                double derivative = shooterRPMVars.deltaError / time_int;
-
-
-                if (Math.abs(shooterRPMVars.errorRPM) < 5) {
-                    shooterRPMVars.integralErr += shooterRPMVars.errorRPM * time_int;
-                } else {
-                    shooterRPMVars.integralErr += 0;
+                shooterRPMVars.integralErr += 0;
 //                integralErr += ((errorRPM > 0) ? 5 * time_int : -5 * time_int) ;
-                }
+            }
 
-                double deltaPower = -1 * shooterRPMVars.time_step_mul * ((shooterRPMVars.errorRPM * shooterRPMVars.kp) + (shooterRPMVars.integralErr * shooterRPMVars.ki) + (derivative * shooterRPMVars.kd));
+            double deltaPower = -1 * shooterRPMVars.time_step_mul * ((shooterRPMVars.errorRPM * shooterRPMVars.kp) + (shooterRPMVars.integralErr * shooterRPMVars.ki) + (derivative * shooterRPMVars.kd));
 
             /* double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
                             (Math.abs(errorRPM) > 10)  ? 1.0/4.0 :
@@ -601,14 +603,14 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
                                     (Math.abs(errorRPM) > 2.5)  ? 01.0/64.0 : (1.0/128.0) ;
 
              */
-                shooterRPMVars.curPower += (deltaPower * shooterRPMVars.pwrMul);
+            shooterRPMVars.curPower += (deltaPower * shooterRPMVars.pwrMul);
 
-                if (shooterRPMVars.curPower > 0.7) shooterRPMVars.curPower = 0.7;
-                if (shooterRPMVars.curPower < -0.7) shooterRPMVars.curPower = -0.7;
+            if (shooterRPMVars.curPower > 0.7) shooterRPMVars.curPower = 0.7;
+            if (shooterRPMVars.curPower < -0.7) shooterRPMVars.curPower = -0.7;
 
-                flywheelShooter.setPower(shooterRPMVars.curPower);
-                double RPM = getRPM(shooterRPMVars.time_step);
-                shooterRPMVars.errorRPM = targetRPM + RPM;
+            flywheelShooter.setPower(shooterRPMVars.curPower);
+            double RPM = getRPM(shooterRPMVars.time_step);
+            shooterRPMVars.errorRPM = targetRPM + RPM;
             /*
             telemetry.addData("RPM = ", RPM);
             telemetry.addData("errorRPM = ", errorRPM);
@@ -618,31 +620,31 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
              */
 
-                if (Math.abs(shooterRPMVars.errorRPM) <2.5) {
-                    if (shooterRPMVars.inLockCount > 1) {
-                        shooterRPMVars.pwrMul = 0.5;
-                    }
-                    shooterRPMVars.inLockCount += 1;
-                    if (shooterRPMVars.inLockCount > 5) {
-                       // shooterRPMVars.inWhile = false;
-                       // shooterRPMVars.isValid = false;
-                        return (shooterRPMVars.curPower);
-
-                    }
-                } else {
-                    shooterRPMVars.inLockCount = 0;
-                    shooterRPMVars.pwrMul = 1.0;
+            if (Math.abs(shooterRPMVars.errorRPM) <2.5) {
+                if (shooterRPMVars.inLockCount > 1) {
+                    shooterRPMVars.pwrMul = 0.5;
                 }
-                //               }
-            }
-            if (shooterRPMVars.loop_count > 1000) {
-                //shooterRPMVars.inWhile = false;
-                //shooterRPMVars.isValid = false;
+                shooterRPMVars.inLockCount += 1;
+                if (shooterRPMVars.inLockCount > 5) {
+                   // shooterRPMVars.inWhile = false;
+                   // shooterRPMVars.isValid = false;
+                    return (shooterRPMVars.curPower);
 
+                }
+            } else {
+                shooterRPMVars.inLockCount = 0;
+                shooterRPMVars.pwrMul = 1.0;
             }
-            return (shooterRPMVars.curPower);
+            //               }
         }
+        if (shooterRPMVars.loop_count > 1000) {
+            //shooterRPMVars.inWhile = false;
+            //shooterRPMVars.isValid = false;
 
+        }
+        return (shooterRPMVars.curPower);
     }
+
+}
 
 

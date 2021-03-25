@@ -68,7 +68,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
         static final double DRIVE_SPEED = 0.7;
         double intakeBottomShooterPwr = 0.7;
         double intakeBottomPwr = -0.8;
-        double intakeTopPwr = 0.7;
+        double intakeTopPwr = 0.8;
         double shooterServoRestPos = 0.6;
         double shooterServoFlickPos = 1.0;
         double calibPwr;
