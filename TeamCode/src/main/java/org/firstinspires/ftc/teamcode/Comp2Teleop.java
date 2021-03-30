@@ -67,8 +67,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
         static final double DRIVE_SPEED_SLOW = 0.4;
         static final double DRIVE_SPEED = 0.7;
         double intakeBottomShooterPwr = 0.7;
-        double intakeBottomPwr = -0.8;
-        double intakeTopPwr = 0.8;
+        double intakeBottomPwr = -0.95;
+        double intakeTopPwr = 0.95;
         double shooterServoRestPos = 0.6;
         double shooterServoFlickPos = 1.0;
         double calibPwr;
@@ -144,7 +144,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
             double intakePower;
             double PowershotPower = 0;
             boolean firstPS = true;
-            double targetRPMGoal = -173.5;
+            double targetRPMGoal = -167.5;
             boolean firstGoalShot = true;
 
             while (opModeIsActive()) {
@@ -158,7 +158,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
                         flywheelPower = shooterRPMVars.curPower;
                     }
                 else if (shooterRPMVars.isPowershot){
-                    SetRPM(-155,flywheelPower);
+                    SetRPM(-150,flywheelPower);
                 }
 
                 intakePower = 1.6 * flywheelPower;

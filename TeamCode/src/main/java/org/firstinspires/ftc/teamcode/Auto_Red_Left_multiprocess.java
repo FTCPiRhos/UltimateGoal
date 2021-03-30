@@ -109,7 +109,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
     private Auto_Red_Left_multiprocess.MoveWPIDVars moveWPIDVars = new Auto_Red_Left_multiprocess.MoveWPIDVars();
 
-    double targetRPMGoal = -172.5;
+    double targetRPMGoal = -167;
     double flywheelPower = 0.6;
     double commandCount = 0;
     boolean part1 = true;
@@ -133,14 +133,14 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
             // Move fwd and left to shoot 3 shots
             if (commandCount == 0) {
-                moveWPIDnew(5, -57, 0.75);
+                moveWPIDnew(5, -55, 0.75);
                 if (!moveWPIDVars.inMove) commandCount++;
             }
             telemetry.addData("command = ", commandCount);
             telemetry.update();
 
             if (commandCount == 1) {
-                moveWPIDnew(-24, 0, 0.75);
+                moveWPIDnew(-20, 0, 0.75);
                 if (!moveWPIDVars.inMove) commandCount++;
             }
             if (commandCount == 2) {
@@ -158,7 +158,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
 
 
-                    moveWPID(5, -3, 0.75);
+                    moveWPID(5, -5, 0.75);
 
 
 
@@ -179,7 +179,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
 
 
-                    moveWPID(-70, 0, 0.75);
+                    moveWPID(-70, 1, 0.75);
 
 
 
@@ -189,7 +189,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
 
 
-                    moveWPID(64, -5, 0.75);
+                    moveWPID(70, -5, 0.75);
 
 
 
@@ -203,7 +203,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
 
 
-                    ArmEncodersNew(0.3, -1350, 10000);
+                    ArmEncodersNew(0.5, -1350, 10000);
                     armServo.setPosition(1);
 
 
@@ -219,29 +219,29 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
             else if (objectFound.equals(OpenCVTestPipeline.RingPosition.ONE)) {
                 if (commandCount == 3) {
 
-                    moveWPID(-6, 0, 0.75);
-                    moveWPID(0, -7, 0.75);
+                    moveWPID(-7, 0, 0.75);
+                    moveWPID(0, -9, 0.75);
 
                     //  CommonMethodForArm();
                     ArmEncodersNew(0.75, 1350, 10000);
                     sleep(750);
                     armServo.setPosition(0);
-                    moveWPID(16, 0, 0.75);
+                    moveWPID(12, 0, 0.75);
                     sleep(250);
-                    flywheelShooter.setPower(flywheelPower * 1.06);
+                    flywheelShooter.setPower(flywheelPower * 0.975);
 
-                    intakeOn();
+                    intakeOnFast();
                     // flywheelShooter.setPower(flywheelPwr * 1.05);
 
                     //moveWPID(8,0,0.75);
                     moveWPID(0, 32, 0.75);
+                    sleep(2000);
+
+                   // intakeOff();
+
                     sleep(1000);
 
-                    intakeOff();
-
-                    sleep(1000);
-
-                    rotate(3, .5);
+                    rotate(1, .5);
 
 
                     flywheelServo.setPosition(1);
@@ -258,11 +258,11 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
                     // 36 side
 
                     // moveWPID(0,4,0.3);
-                    moveWPID(-30, 0, 0.75);
+                    moveWPID(-32, 0, 0.75);
                     armServo.setPosition(1);
                     sleep(1000);
-                    moveWPID(0, 13, 0.75);
-                    moveWPID(100, 0, 1.0);
+                    moveWPID(0, 16, 0.75);
+                    moveWPID(98.5, 0, 1.0);
                     armServo.setPosition(0);
                     sleep(500);
                     moveWPID(12, 0, 0.75);
@@ -281,71 +281,73 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
                 if (commandCount == 3) {
                     intakeReverse();
 
-                    flywheelShooter.setPower(flywheelPower * 1.05);
-                    moveWPID(7, 0, 0.5);
+                    flywheelShooter.setPower(flywheelPower * 0.98);
+                    moveWPID(4, 0, 0.5);
 
 
-                    moveWPID(0, 18, 1.0);
+                    moveWPID(0, 15, 0.8);
 
-                    intakeOff();
+                    //intakeOff();
 
                     moveWPID(0, -5, 0.75);
 
 
                     intakeOnFast();
-                    moveWPID(0, 16, 0.2);
+                    moveWPID(0, 16, 0.15);
                     sleep(1500);
 
 
-                    intakeReverse();
+                    //intakeReverse();
 
-                    moveWPID(0, -4, 0.75);
-                    moveWPID(-8, 0, 0.75);
+                    moveWPID(0, -6, 0.75);
+                    moveWPID(-2, 0, 0.75);
 
-                    intakeOff();
+                    //intakeOff();
+
+                    rotate(0.5,-7);
 
                     for (int i = 0; i < 3; i += 1) {
 
                         flywheelServo.setPosition(1);
                         sleep(350);
-                        intakeOn();
+                        intakeOnFast();
 
-                        if (i == 0) flywheelShooter.setPower(flywheelPower * 1.08 * 1.1);
+                        if (i == 0) flywheelShooter.setPower(flywheelPower * 1.08 * 1.01);
 
-                        if (i == 1) flywheelShooter.setPower(flywheelPower * 1.08 * 1.1);
+                        if (i == 1) flywheelShooter.setPower(flywheelPower * 1.08 * 1.025);
                         flywheelServo.setPosition(0.6);
                         sleep(350);
 
 
                     }
-                    flywheelShooter.setPower(flywheelPower * 1.025);
+                    flywheelShooter.setPower(flywheelPower * 1);
                     intakeOnFast();
-                    moveWPID(8, 0, 0.75);
+                    //moveWPID(3, 0, 0.75);
 
-                    moveWPID(0, 8, 0.75);
+                    moveWPID(0, 17, 0.5);
                     sleep(1000);
-                    intakeOff();
-                    moveWPID(0, -34, 0.75);
-                    moveWPID(-16, 0, 0.75);
+                   // intakeOff();
+                    moveWPID(0, -30, 0.75);
+                    //moveWPID(-17, 0, 0.75);
 
                     sleep(250);
 
                     for (int i = 0; i < 2; i++) {
                         flywheelServo.setPosition(1);
                         sleep(350);
-                        intakeOn();
+                        intakeOnFast();
                         flywheelServo.setPosition(0.6);
                         sleep(350);
-                        intakeOff();
+                        //intakeOff();
                         flywheelShooter.setPower(flywheelPower * 1.05);
 
 
                     }
                     flywheelShooter.setPower(0);
-                    rotate(90, 1.0);
-                    moveWPID(56, 4, 1.0);
+                    rotate(85, 1.0);
+                    moveWPID(56, -10, 1.0);
                     CommonMethodForArm();
-                    moveWPID(-43, 8, 1.0);
+                    moveWPID(-48, 8, 1.0);
                     commandCount++;
                     stop();
                 }

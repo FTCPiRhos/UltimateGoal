@@ -65,8 +65,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     double intakeBottomShooterPwr = -0.3;
 // ARM RANGE = 1400 COUNTS
 
-    double intakeTopMaxPwr = 0.6;
-    double intakeBottomMaxPwr = -0.775;
+    double intakeTopMaxPwr = 1;
+    double intakeBottomMaxPwr = -1;
 
     //OpenCV related initalization
     OpenCvInternalCamera webcam;
