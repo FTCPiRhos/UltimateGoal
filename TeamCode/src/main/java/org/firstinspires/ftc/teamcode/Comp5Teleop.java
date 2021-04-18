@@ -9,13 +9,12 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name="Competition 3", group="PiRhos")
+@TeleOp(name="Current Teleop (USE THIS).", group="PiRhos")
 @Disabled
 
 
 
-
-public class Comp3Teleop extends LinearOpMode {
+public class Comp5Teleop extends LinearOpMode {
     class SetRPMVars {
         ElapsedTime timer = new ElapsedTime();
         boolean isValid = false;
@@ -41,32 +40,9 @@ public class Comp3Teleop extends LinearOpMode {
         int inLockCount = 0;
         int loop_count = 0;
     }
-    class DrivePowerVars {
-        ElapsedTime timer = new ElapsedTime();
-
-        double pwrMul = 1.0;
-        double curPower;
-        double errorPwr;
-        double curTime;
-        double deltaError;
-
-        double time_step = 25;
-
-        double time_step_mul = time_step / 50.0;
-
-        double kp = 0.0025 * 1;
-        double ki = (0.0025 / 50.0) * 0.1 * 1;
-        double kd = 0.0005 * 1;
-
-
-        double lastErr = 0;
-        double integralErr = 0;
-        int inLockCount = 0;
-        int loop_count = 0;
-    }
 
     private SetRPMVars shooterRPMVars = new SetRPMVars();
-    private DrivePowerVars drivePowerVars = new DrivePowerVars();
+
 
 
 
@@ -91,9 +67,9 @@ public class Comp3Teleop extends LinearOpMode {
             (WHEEL_DIAMETER_INCHES * 3.1415);
     static final double DRIVE_SPEED_SLOW = 0.4;
     static final double DRIVE_SPEED = 0.7;
-    double intakeBottomShooterPwr = 0.5;
-    double intakeBottomPwr = -0.7;
-    double intakeTopPwr = 0.5;
+    double intakeBottomShooterPwr = 0.7;
+    double intakeBottomPwr = -0.95;
+    double intakeTopPwr = 0.95;
     double shooterServoRestPos = 0.6;
     double shooterServoFlickPos = 1.0;
     double calibPwr;
@@ -160,17 +136,37 @@ public class Comp3Teleop extends LinearOpMode {
         boolean IntakeCalibrated = false;
         double targetRPMIntake = 150;
         double flywheelPower = 0.6;
+        double maxSwitchPwr = 1.0;
         double LFPower;
         double LBPower;
         double RFPower;
         double RBPower;
         double ArmPower;
+        double LFDrivePwrMul = 1;
+        double RFDrivePwrMul = 1;
+        double LBDrivePwrMul = 1;
+        double RBDrivePwrMul = 1;
         double DrivePwrMul;
+        double DrivePwrMulTrigger;
         double intakePower;
         double PowershotPower = 0;
         boolean firstPS = true;
-        double targetRPMGoal = -158.5;
+        double targetRPMGoal = -167.5;
         boolean firstGoalShot = true;
+        double oldLFPos = 0;
+        double oldLBPos = 0;
+        double oldRFPos = 0;
+        double oldRBPos  = 0;
+        double LFPos ;
+        double LBPos ;
+        double RFPos ;
+        double RBPos ;
+        boolean LFflip = false;
+        boolean LBflip = false;
+        boolean RFflip = false;
+        boolean RBflip = false;
+
+        //boolean drivePwrController = false;
 
         while (opModeIsActive()) {
             if (firstGoalShot){
@@ -186,8 +182,16 @@ public class Comp3Teleop extends LinearOpMode {
                 SetRPM(-150,flywheelPower);
             }
 
+            // motor pos get
+            LFPos = frontLeft.getCurrentPosition();
+            LBPos = backLeft.getCurrentPosition();
+            RFPos = frontRight.getCurrentPosition();
+            RBPos = backRight.getCurrentPosition();
+
+
+
             intakePower = 1.6 * flywheelPower;
-            DrivePwrMul = 1.0 - (gamepad1.right_trigger);
+            DrivePwrMulTrigger = 1.0 - (gamepad1.right_trigger);
 
             calibPwr = flywheelPower;
             // init variables
@@ -204,7 +208,7 @@ public class Comp3Teleop extends LinearOpMode {
             double arm = gamepad2.right_stick_y;
             double y = -gamepad1.left_stick_y * sensMult;
             double x = gamepad1.left_stick_x * sensMult;
-            double rx = gamepad1.right_stick_x;
+            double rx = 0.75 * gamepad1.right_stick_x;
 
             // calculate motor powers
             LFPower = (y + x + rx);
@@ -229,10 +233,113 @@ public class Comp3Teleop extends LinearOpMode {
                 RBPower /= max;
             }
 
-            LFPower = LFPower * DrivePwrMul;
-            LBPower = LBPower * DrivePwrMul;
-            RFPower = RFPower * DrivePwrMul;
-            RBPower = RBPower * DrivePwrMul;
+            if ((LFPos - oldLFPos > 0) && (LFPower < 0)) {
+                if (LFPower == 0) {
+
+                }
+                else {
+                    LFDrivePwrMul = Math.abs(maxSwitchPwr / LFPower);
+                    telemetry.addData("LF flipped ", 0);
+                }
+            }
+
+            if ((LFPos - oldLFPos < 0) && (LFPower > 0)) {
+                if (LFPower == 0){
+
+                }
+                else {
+                    LFDrivePwrMul = Math.abs(maxSwitchPwr / LFPower);
+
+                    telemetry.addData("LF flipped ", 0);
+                }
+            }
+
+            if ((LBPos - oldLBPos > 0) && (LBPower < 0)) {
+                if (LBPower == 0 ){
+
+                }
+                else {
+                    LBDrivePwrMul = Math.abs(maxSwitchPwr / LBPower);
+
+
+                    telemetry.addData("LB flipped ", 0);
+                }
+            }
+
+            if ((LBPos - oldLBPos < 0) && (LBPower > 0)) {
+                if (LBPower == 0 ){
+
+                }
+                else {
+                    LBDrivePwrMul = Math.abs(maxSwitchPwr / LBPower);
+
+                    telemetry.addData("LB flipped ", 0);
+                }
+            }
+
+
+            if ((RFPos - oldRFPos > 0) && (RFPower < 0)) {
+                if (RFPower == 0){
+
+                }
+                else {
+                    RFDrivePwrMul = Math.abs(maxSwitchPwr / RFPower);
+                    telemetry.addData("RF flipped ", 0);
+                }
+            }
+
+            if ((RFPos - oldRFPos < 0) && (RFPower > 0)) {
+                if (RFPower == 0){
+
+                }
+                else {
+                    RFDrivePwrMul = Math.abs(maxSwitchPwr / RFPower);
+                    telemetry.addData("RF flipped ", 0);
+                }
+            }
+
+            if ((RBPos - oldRBPos > 0) && (RBPower < 0)) {
+                if (RBPower == 0){
+
+                }
+                else {
+                    RBDrivePwrMul = Math.abs(maxSwitchPwr / RBPower);
+
+
+                    telemetry.addData("RB flipped ", 0);
+                }
+            }
+
+            if ((RBPos - oldRBPos < 0) && (RBPower > 0)) {
+                if (RBPower == 0){
+
+                }
+                else {
+                    RBDrivePwrMul = Math.abs(maxSwitchPwr / RBPower);
+
+                    telemetry.addData("RB flipped ", 0);
+                }
+            }
+
+            if (LBDrivePwrMul > 1) LBDrivePwrMul =1;
+            if (LFDrivePwrMul > 1) LFDrivePwrMul =1;
+            if (RBDrivePwrMul > 1) RBDrivePwrMul =1;
+            if (RFDrivePwrMul > 1) RFDrivePwrMul =1;
+
+            DrivePwrMul = Math.min(LBDrivePwrMul , LFDrivePwrMul);
+            DrivePwrMul = Math.min(DrivePwrMul, RBDrivePwrMul);
+            DrivePwrMul = Math.min(DrivePwrMul, RFDrivePwrMul);
+
+
+            LFPower = LFPower * DrivePwrMul * DrivePwrMulTrigger;
+            LBPower = LBPower * DrivePwrMul * DrivePwrMulTrigger;
+            RFPower = RFPower * DrivePwrMul * DrivePwrMulTrigger;
+            RBPower = RBPower * DrivePwrMul * DrivePwrMulTrigger;
+
+
+
+
+
             if (gamepad2.right_trigger>0.5){
                 ArmPower = arm * -1;
             }
@@ -260,38 +367,7 @@ public class Comp3Teleop extends LinearOpMode {
             if (gamepad2.left_bumper == true) armServo.setPosition(1);
 
             if (gamepad1.dpad_up == true) {
-                    /*
-                    if (firstGoalShot) {
-                        flywheelPower = shooterTrigger3xNP(flywheelPower, targetRPMGoal, shooterRPMVars);
-                        calibPwr = flywheelPower;
-                        firstGoalShot = false;
-                    } else {
 
-                     */
-                    /*
-                        intakeTop.setPower(0);
-
-                        for (int i = 0; i < 3; i += 1) {
-
-
-                            flywheelServo.setPosition(shooterServoFlickPos);
-
-                            sleep(350);
-                            intakeBottom.setPower(intakeBottomShooterPwr);
-                            if (i == 0) {
-                                flywheelShooter.setPower(flywheelPower * 1.075);
-                            }
-                            flywheelServo.setPosition(shooterServoRestPos);
-                            sleep(350);
-                            intakeBottom.setPower(0);
-
-                        }
-                        //sleep(500);
-
-
-                       // flywheelShooter.setPower(0);
-
-                     */
                 shoot3times(flywheelPower);
             }
 
@@ -332,50 +408,19 @@ public class Comp3Teleop extends LinearOpMode {
                 intakeBottom.setPower(-1 * intakeBottomPwr);
 
             }
-                /*
-                if (gamepad1.y == true) {
-                    double I1Pwr = 0;
-                    double I2Pwr = 0;
 
-                    intakeTop.setPower(I1Pwr);
-                    intakeBottom.setPower(I2Pwr);
-                }
 
-                 */
+
 
             if (gamepad1.b == true) {
                 intakeBottom.setPower(intakeBottomPwr);
-/*
-                if (!IntakeCalibrated){
-                    intakePower = SetRPMIntake(targetRPMIntake, intakePower);
-                    IntakeCalibrated = true;
-                }
-
- */
-                // if (intakePower > 0.85) intakePower = 0.85;
 
 
                 intakeTop.setPower(intakeTopPwr);
 
             }
 
-            // if (gamepad1.a == true){
-            //   shooterTrigger1x(-145);
-                /*
-                if (firstPS == true){
-                    PowershotPower = shooterTrigger1x(-148);
-                    firstPS = false;
-                }
-                flywheelShooter.setPower(PowershotPower);
 
-                 */
-            //  }
-            //if (gamepad2.b) moveWPID(-9,0);
-
-            //if (gamepad2.a); PowershotPower = shooterTrigger1x(-148);
-
-
-            // if (gamepad2.x) CommonMethodForArm();
 
             if (gamepad2.x) {
                 firstGoalShot = true;
@@ -392,18 +437,22 @@ public class Comp3Teleop extends LinearOpMode {
                 //flywheelShooter.setPower(PowershotPower);
             }
             if (gamepad2.y) {
-                //PowershotPower = shooterTrigger1xR(-150);
 
                 shooterRPMVars.isPowershot = true;
                 shooterRPMVars.isValid = true;
 
             }
-            telemetry.addData("Target RPM = ", targetRPMGoal);
-            //   telemetry.addData("Mult = ", calibMult);
-            telemetry.addData("First Shot = ", firstGoalShot);
 
-            //   telemetry.addData("Flywheel Power = ", flywheelPower);
-            // telemetry.addData("Current Power = ", shooterRPMVars.curPower);
+            oldLFPos = LFPos;
+            oldLBPos = LBPos;
+            oldRFPos = RFPos;
+            oldRBPos = RBPos;
+           // telemetry.addData("Target RPM = ", targetRPMGoal);
+            //   telemetry.addData("Mult = ", calibMult);
+            //telemetry.addData("First Shot = ", firstGoalShot);
+            //telemetry.addData("power flip = ",LFflip);
+
+
 
             telemetry.update();
 
@@ -959,9 +1008,6 @@ public class Comp3Teleop extends LinearOpMode {
 
 
     }
-
-
-
 
 
 

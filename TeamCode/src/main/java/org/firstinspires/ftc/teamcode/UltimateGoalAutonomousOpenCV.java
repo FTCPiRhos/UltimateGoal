@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 @Autonomous(name="Auto Ultimate Goal OpenCV Blue Left", group="PiRhos")
 //@Disabled
+@Disabled
 public class UltimateGoalAutonomousOpenCV extends UltimateGoalAutonomousBaseOpenCV {
 
     @Override

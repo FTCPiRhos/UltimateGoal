@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.UltimateGoalAutonomousBase;
@@ -18,6 +19,7 @@ import org.openftc.easyopencv.OpenCvPipeline;
 
 @Autonomous(name="OpenCV Align", group="PiRhos")
 //@Disabled
+@Disabled
 public class OpenCVAlign extends UltimateGoalAutonomousBase {
     OpenCvInternalCamera phoneCam;
     OpenCVTestPipeline pipeline;

@@ -21,6 +21,7 @@ package org.firstinspires.ftc.teamcode;
  * SOFTWARE.
  */
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
@@ -51,6 +52,7 @@ import java.util.List;
  * of the vision processing to usercode.
  */
 @Autonomous(name = "Blue Tower Goal Align", group = "PiRhos")
+@Disabled
 public class OpenCV_Test extends UltimateGoalAutonomousBaseOpenCV
 {
     OpenCvInternalCamera2 phoneCam;

@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -8,7 +9,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name="Competition 2", group="PiRhos")
+@TeleOp(name="Current Teleop (USE THIS)", group="PiRhos")
+@Disabled
 
 
 
@@ -146,6 +148,16 @@ import com.qualcomm.robotcore.util.ElapsedTime;
             boolean firstPS = true;
             double targetRPMGoal = -167.5;
             boolean firstGoalShot = true;
+            double oldLFPwr = 0;
+            double oldLBPwr = 0;
+            double oldRFPwr = 0;
+            double oldRBPwr = 0;
+            boolean LFflip = false;
+            boolean LBflip = false;
+            boolean RFflip = false;
+            boolean RBflip = false;
+
+            boolean drivePwrController = false;
 
             while (opModeIsActive()) {
                 if (firstGoalShot){
@@ -179,7 +191,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
                 double arm = gamepad2.right_stick_y;
                 double y = -gamepad1.left_stick_y * sensMult;
                 double x = gamepad1.left_stick_x * sensMult;
-                double rx = gamepad1.right_stick_x;
+                double rx = 0.75 * gamepad1.right_stick_x;
 
                 // calculate motor powers
                 LFPower = (y + x + rx);
@@ -204,10 +216,19 @@ import com.qualcomm.robotcore.util.ElapsedTime;
                     RBPower /= max;
                 }
 
+                LFflip = (((LFPower > 0) && (oldLFPwr <0)) || ((LFPower < 0) && (oldLFPwr >0)));
+
+                if (LFflip) DrivePwrMul = 0.01;
+
                 LFPower = LFPower * DrivePwrMul;
                 LBPower = LBPower * DrivePwrMul;
                 RFPower = RFPower * DrivePwrMul;
                 RBPower = RBPower * DrivePwrMul;
+
+
+
+
+
                 if (gamepad2.right_trigger>0.5){
                     ArmPower = arm * -1;
                 }
@@ -227,6 +248,11 @@ import com.qualcomm.robotcore.util.ElapsedTime;
                 frontRight.setPower(RFPower);
                 backRight.setPower(RBPower);
                 armMotor.setPower(ArmPower);
+
+                oldLBPwr = LBPower;
+                oldLFPwr = LFPower;
+                oldRBPwr = RBPower;
+                oldRFPwr = RFPower;
 
 
                 if (gamepad2.right_bumper == true) armServo.setPosition(0.4);
@@ -378,6 +404,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
                 telemetry.addData("Target RPM = ", targetRPMGoal);
              //   telemetry.addData("Mult = ", calibMult);
                 telemetry.addData("First Shot = ", firstGoalShot);
+                telemetry.addData("power flip = ",LFflip);
 
              //   telemetry.addData("Flywheel Power = ", flywheelPower);
                // telemetry.addData("Current Power = ", shooterRPMVars.curPower);

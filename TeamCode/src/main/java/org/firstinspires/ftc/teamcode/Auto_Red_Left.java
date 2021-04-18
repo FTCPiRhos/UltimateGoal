@@ -31,8 +31,10 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
         flywheelShooter.setPower(0);
 
         // Move fwd and left to shoot 3 shots
-        moveWPID(5,-57,0.75);
-        moveWPID(-22,0,0.75);
+        moveWPID(5,-57,0.3);
+        moveWPID(-22,0,0.3);
+
+        stop();
 /*
         flywheelPower = SetRPM(targetRPM, flywheelPower);
         flywheelPower = 1.0 * flywheelPower;

@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.vision;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -16,7 +17,7 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
 @TeleOp(name="Open CV Detect")
-public class OpenCVDetect extends LinearOpMode {
+@Disabled public class OpenCVDetect extends LinearOpMode {
     OpenCvCamera webcam;
     //TODO: Insert correct Hardware2 class and instantiate robot
 

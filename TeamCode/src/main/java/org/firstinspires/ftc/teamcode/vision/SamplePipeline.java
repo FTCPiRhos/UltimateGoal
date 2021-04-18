@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.vision;
 
 import android.util.Log;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -18,7 +20,7 @@ import org.openftc.easyopencv.OpenCvPipeline;
 import java.util.ArrayList;
 import java.util.List;
 
-class SamplePipeline extends OpenCvPipeline
+@Disabled class SamplePipeline extends OpenCvPipeline
 {
     public Point targetLocation = new Point();
     public double contourArea = 0;

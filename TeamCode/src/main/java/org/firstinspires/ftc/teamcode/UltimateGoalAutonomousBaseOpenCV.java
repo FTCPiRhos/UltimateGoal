@@ -6,6 +6,7 @@ import android.view.View;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -43,20 +44,27 @@ import java.util.List;
 
 @Autonomous(name="Auto Ultimate Goal Base OpenCV", group="PiRhos")
 //@Disabled
+@Disabled
 public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     /* Declare OpMode members. */
     protected DcMotor frontLeft, frontRight, backLeft, backRight, flywheelShooter, armMotor, intakeTop, intakeBottom;
-    protected Servo armServo, flywheelServo;
+    protected Servo armServo, flywheelServo, ringBlockerRight, ringBlockerLeft;
+
+
 
     protected ElapsedTime runtime = new ElapsedTime();
 
     static final double COUNTS_PER_MOTOR_REV = 537.6;// eg: TETRIX Motor Encoder
     static final double COUNTS_PER_ARM_MOTOR_REV = 2786;
-    static final double DRIVE_GEAR_REDUCTION = 2.0 / 2;     // This is < 1.0 if geared UP
+    static final double DRIVE_GEAR_REDUCTION = 2.0 / 4.0;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 3.937;   // For figuring circumference - 100mm
-    static final double COUNTS_PER_INCH = 1.45 * (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
+    static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
+    static final double YTargetMul = 1.23;
+    static final double XTargetMul = 1.7;
+
+
     static final double COUNTS_PER_ARM_INCH = COUNTS_PER_ARM_MOTOR_REV * 1.5 * 3.1415;
     static final double DRIVE_SPEED_SLOW = 0.4;
     static final double DRIVE_SPEED = 0.7;
@@ -90,6 +98,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         backRight = hardwareMap.get(DcMotor.class, "right_back");
         armMotor = hardwareMap.get(DcMotor.class, "arm_motor");
         armServo = hardwareMap.get(Servo.class,"arm_servo");
+        ringBlockerLeft = hardwareMap.get(Servo.class,"right_blocker");
+        ringBlockerRight = hardwareMap.get(Servo.class,"left_blocker");
+
         intakeTop = hardwareMap.get(DcMotor.class,"intake2");
         intakeBottom = hardwareMap.get(DcMotor.class,"intake1");
         intakeTop.setDirection(DcMotor.Direction.FORWARD);
@@ -102,7 +113,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         backRight.setDirection(DcMotor.Direction.FORWARD);
         armMotor.setDirection(DcMotor.Direction.FORWARD);
         armServo.setDirection(Servo.Direction.FORWARD);
-
+        ringBlockerLeft.setDirection(Servo.Direction.FORWARD);
+        ringBlockerRight.setDirection(Servo.Direction.FORWARD);
 
         flywheelShooter = hardwareMap.get(DcMotor.class, "flywheel_shooter");
         flywheelShooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -290,6 +302,181 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         return (curPower);
     }
 
+    public void moveWPIDtest (double targetXInches, double targetYInches, double maxPwr){
+
+
+        frontLeft.setPower(0);
+        frontRight.setPower(0);
+
+        backRight.setPower(0);
+        backLeft.setPower(0);
+
+
+        double targetXCount = targetXInches * COUNTS_PER_INCH * XTargetMul;
+        double targetYCount = targetYInches * COUNTS_PER_INCH * YTargetMul;
+        // get starting X and Y position from encoders
+        // and solving from equation
+
+        double initialYPos = ( backLeft.getCurrentPosition() + backRight.getCurrentPosition())/2;
+        double initialXPos = ( backRight.getCurrentPosition() - backLeft.getCurrentPosition())/2;
+        // adding Count + initial
+        double targetXPos = targetXCount + initialXPos;
+        double targetYPos = targetYCount + initialYPos;
+        // setting up X and Y for loop change
+        double currentXPos = initialXPos;
+        double currentYPos = initialYPos;
+        double kp = 0.001;
+        double ki = 0.00035;
+        double kd = 0.02;
+        //.02
+        double integralX = 0;
+        double integralY = 0;
+        double finalGain = 5 ;
+
+        double errorX = targetXPos - currentXPos;
+        double errorY = targetYPos - currentYPos;
+
+        boolean movementDoneX = false ;
+        boolean movementDoneY = false ;
+
+        double lastXError = 0;
+        double lastYError = 0;
+        double curPowerX = 0;
+        double curPowerY = 0;
+        double capPowerX = maxPwr;
+        double capPowerY = maxPwr;
+        double minPowerX = 0;
+        double minPowerY = 0;
+        double deltaKX = 1;
+        double deltaKY = 1;
+        boolean firstPass = true ;
+        boolean fPosX = (errorX>= 0);
+        boolean fposY = (errorY >= 0);
+
+        double curPowerLF = 0;
+        double curPowerLB = 0;
+        double curPowerRF = 0;
+        double curPowerRB = 0;
+
+        double constantPowerX = fPosX ? 0.20 : -0.20;
+        double constantPowerY = fposY ? 0.20 : -0.20;
+
+        if ((Math.abs(targetXInches) + Math.abs(targetYInches)) <25){
+            capPowerX = maxPwr;
+            capPowerY = maxPwr;
+        }
+        ElapsedTime timer = new ElapsedTime();
+        // start loop while any error is > some number
+        while ((!movementDoneX || !movementDoneY) ){
+
+
+            double deltaXError = firstPass ? 0 : errorX - lastXError;
+            double deltaYError = firstPass ? 0 : errorY - lastYError;
+
+            firstPass = false ;
+
+            double curTime = timer.time();
+
+            if (Math.abs(errorX) < 24 * COUNTS_PER_INCH * XTargetMul) {
+                integralX += errorX * curTime;
+            }
+            else {
+                integralX = 0;
+            }
+            if (Math.abs(errorY) < 24 * COUNTS_PER_INCH * YTargetMul) {
+                integralY += errorY * curTime;
+            }
+            else {
+                integralY = 0;
+            }
+
+            double derivativeX = deltaXError/curTime;
+            double derivativeY = deltaYError/curTime;
+
+
+            timer.reset();
+
+            if (movementDoneX) deltaKX = 0;
+            if (movementDoneY) deltaKY = 0;
+
+            double deltaXPower = deltaKX * ((errorX * kp) + (integralX * ki) + (derivativeX * kd));
+            double deltaYPower = deltaKY * ((errorY * kp) + (integralY * ki) + (derivativeY * kd));
+
+
+
+            curPowerX = (deltaXPower) ;
+            curPowerY = (deltaYPower);
+            double powerLowThreshMul = 0;
+
+            //if (((Math.abs(curPowerX)) > minPowerX )  ||  ((Math.abs(curPowerY)) > minPowerY))
+            powerLowThreshMul = 1;
+
+            double usePwrX = powerLowThreshMul * curPowerX ;
+            double usePwrY = powerLowThreshMul * curPowerY ;
+
+            if (curPowerX > capPowerX) usePwrX = capPowerX;
+            if (curPowerX < (-1 *capPowerX)) usePwrX = -1 * capPowerX;
+
+            if (curPowerY > capPowerY) usePwrY = capPowerY;
+            if (curPowerY < (-1 * capPowerY)) usePwrY = -1 * capPowerY;
+
+            double PwrRatioX = (curPowerX != 0) ? Math.abs(usePwrX/curPowerX) : 0  ;
+            double PwrRatioY = (curPowerY != 0) ? Math.abs(usePwrY/curPowerY) : 0 ;
+
+            if (PwrRatioX != PwrRatioY) {
+                if ((PwrRatioX != 0) && (PwrRatioX < PwrRatioY)) {
+                    usePwrY = PwrRatioX * usePwrY / PwrRatioY  ;
+                }
+                if ((PwrRatioY != 0) && (PwrRatioY < PwrRatioX)) {
+                    usePwrX = PwrRatioY * usePwrX / PwrRatioX  ;
+                }
+
+            }
+
+            usePwrX = (!movementDoneX) ? usePwrX : 0 ;
+            usePwrY = (!movementDoneY) ? usePwrY : 0 ;
+
+            curPowerLF = usePwrY + usePwrX;
+            curPowerLB = usePwrY - usePwrX;
+            curPowerRF = usePwrY - usePwrX;
+            curPowerRB = usePwrY + usePwrX;
+
+            backRight.setPower(curPowerRB);
+            backLeft.setPower(curPowerLB);
+
+            frontLeft.setPower(curPowerLF);
+            frontRight.setPower(curPowerRF);
+
+            sleep(50);
+
+            double posBL = backLeft.getCurrentPosition() ;
+            double posBR = backRight.getCurrentPosition() ;
+
+            double posFL = frontLeft.getCurrentPosition() ;
+            double posFR = frontRight.getCurrentPosition() ;
+
+            currentYPos = (posBL  + posBR)/2;
+            currentXPos = ( posBR - posBL)/2;
+
+            errorX = (targetXPos - currentXPos) ;
+            errorY = (targetYPos - currentYPos);
+
+
+            lastXError = errorX;
+            lastYError = errorY;
+
+
+            telemetry.addData("error y = ", errorY);
+            telemetry.addData("error x = ", errorX);
+
+            telemetry.addData("use pwr x = " , usePwrX);
+            telemetry.addData("use pwr y = " , usePwrY);
+            telemetry.update();
+
+
+        }
+    }
+
     public void moveWPID (double targetXInches, double targetYInches, double maxPwr){
 
 
@@ -313,9 +500,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         // setting up X and Y for loop change
         double currentXPos = initialXPos;
         double currentYPos = initialYPos;
-        double kp = 0.000005;
-        double ki = 0.00005;
-        double kd = 0.00005;
+        double kp = 0.001;
+        double ki = 0.00035;
+        double kd = 0.02;
         double integralX = 0;
         double integralY = 0;
         double finalGain = 5 ;
@@ -364,9 +551,21 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
             double curTime = timer.time();
 
-            integralX += errorX * curTime;
-            integralY += errorY * curTime;
+            //integralX += errorX * curTime;
+            //integralY += errorY * curTime;
 
+            if (Math.abs(errorX) < 24 * COUNTS_PER_INCH ) {
+                integralX += errorX * curTime;
+            }
+            else {
+                integralX = 0;
+            }
+            if (Math.abs(errorY) < 24 * COUNTS_PER_INCH ) {
+                integralY += errorY * curTime;
+            }
+            else {
+                integralY = 0;
+            }
             double derivativeX = deltaXError/curTime;
             double derivativeY = deltaYError/curTime;
 
@@ -1040,10 +1239,10 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             sleep(350);
             intakeBottom.setPower(intakeBottomShooterPwr);
             if (i == 0 ) {
-                flywheelShooter.setPower(flywheelPower * 1.15);
+                flywheelShooter.setPower(flywheelPower * 1.1);
             }
             if (i == 1 ){
-                flywheelShooter.setPower((flywheelPower * 1.15));
+                flywheelShooter.setPower((flywheelPower * 1.1));
             }
             flywheelServo.setPosition(0.6);
             sleep(350);
