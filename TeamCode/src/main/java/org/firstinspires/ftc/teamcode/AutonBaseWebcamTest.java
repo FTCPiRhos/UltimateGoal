@@ -5,6 +5,7 @@ import android.view.View;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -35,7 +36,8 @@ import org.openftc.easyopencv.OpenCvWebcam;
 import java.util.List;
 
 @Autonomous(name="Auto Ultimate Goal Base OpenCV Test", group="PiRhos")
-//@Disabled
+
+@Disabled
 public abstract class AutonBaseWebcamTest extends LinearOpMode {
 
     /* Declare OpMode members. */

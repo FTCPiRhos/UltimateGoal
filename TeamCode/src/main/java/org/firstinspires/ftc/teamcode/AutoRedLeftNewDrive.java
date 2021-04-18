@@ -4,13 +4,12 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name="Auto Red Left1", group="PiRhos")
-@Disabled
+@Autonomous(name="Auto Red Left New Drive", group="PiRhos")
 
-public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV {
+public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
     class SetRPMVars {
         ElapsedTime timer = new ElapsedTime();
-        boolean isValid = false;
+        boolean atTarget = false;
         boolean inWhile = false;
         boolean isPowershot = false;
         double pwrMul = 1.0;
@@ -34,7 +33,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
         int loop_count = 0;
     }
 
-    private Auto_Red_Left_multiprocess.SetRPMVars shooterRPMVars = new Auto_Red_Left_multiprocess.SetRPMVars();
+    private AutoRedLeftNewDrive.SetRPMVars shooterRPMVars = new AutoRedLeftNewDrive.SetRPMVars();
 
     class MoveWPIDVars {
         ElapsedTime timer = new ElapsedTime();
@@ -108,18 +107,26 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
         double loopcount;
     }
 
-    private Auto_Red_Left_multiprocess.MoveWPIDVars moveWPIDVars = new Auto_Red_Left_multiprocess.MoveWPIDVars();
+    private AutoRedLeftNewDrive.MoveWPIDVars moveWPIDVars = new AutoRedLeftNewDrive.MoveWPIDVars();
 
     double targetRPMGoal = -167;
     double flywheelPower = 0.6;
     double commandCount = 0;
     boolean part1 = true;
+    double drivePwrStandard = 0.5;
+    double rightBlockerRestPos = 0.62;
+    double leftBlockerRestPos = 0.935;
+    double rightBlockerBlockingPos = 1;
+    double leftBlockerBlockingPos = 0.635;
 
     @Override
     public void runOpMode() {
         // Initialize hardware
         initHardware(true);
         armServo.setPosition(1);
+        ringBlockerLeft.setPosition(leftBlockerRestPos);
+        ringBlockerRight.setPosition(rightBlockerRestPos);
+
         waitForStart();
 
 
@@ -134,7 +141,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
             // Move fwd and left to shoot 3 shots
             if (commandCount == 0) {
-                moveWPIDnew(5, -55, 0.3);
+                moveWPIDnew(5, -66, 0.5);
                 if (!moveWPIDVars.inMove) commandCount++;
 
             }
@@ -143,15 +150,23 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
             if (commandCount == 1) {
 
-                moveWPIDnew(-20, 0, 0.3);
-                if (!moveWPIDVars.inMove) commandCount++;
+                moveWPIDnew(-30, 0, 0.5);
+                if (!moveWPIDVars.inMove) {
+                    //rotate(2, .25);
+
+                    commandCount++;
+                }
 
             }
 
 
             if (commandCount == 2) {
-                shooterTrigger3xNPnew(flywheelPower);
-                if (!moveWPIDVars.inMove) commandCount++;
+                //if (shooterRPMVars.atTarget == true) {
+
+                    shooterTrigger3xNPnew(flywheelPower);
+                    if (!moveWPIDVars.inMove) commandCount++;
+               // }
+
             }
 
 
@@ -160,11 +175,11 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
             if (objectFound.equals(OpenCVTestPipeline.RingPosition.NONE)) {
                 if (commandCount == 3) {
-                    rotate(90, .8);
+                    rotate(90, .5);
 
 
 
-                    moveWPID(5, -5, 0.75);
+                    moveWPID(20, -11, 0.6);
 
 
 
@@ -175,17 +190,13 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
 
 
-                    moveWPID(8, 0, 0.75);
+                    moveWPID(12, 12, 0.6);
+                    moveWPID(0,2,0.5);
 
 
 
 
-                    moveWPID(-3, 5, 0.75);
-
-
-
-
-                    moveWPID(-70, 1, 0.75);
+                    moveWPID(-106, 0, 0.6);
 
 
 
@@ -195,7 +206,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
 
 
-                    moveWPID(70, -5, 0.75);
+                    moveWPID(106, -17, 0.6);
 
 
 
@@ -204,7 +215,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
                     sleep(500);
 
 
-                    moveWPID(8, 0, 0.75);
+                    moveWPID(8, 0, 0.6);
 
 
 
@@ -214,7 +225,7 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
 
 
-                    moveWPID(-3, 5, 0.75);
+                    moveWPID(-3, 5, 0.6);
 
                     sleep(500);
                     stop();
@@ -225,29 +236,29 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
             else if (objectFound.equals(OpenCVTestPipeline.RingPosition.ONE)) {
                 if (commandCount == 3) {
 
-                    moveWPID(-7, 0, 0.75);
-                    moveWPID(0, -9, 0.75);
+                    moveWPID(-14, 0, drivePwrStandard);
+                    moveWPID(0, -18, drivePwrStandard);
 
                     //  CommonMethodForArm();
                     ArmEncodersNew(0.75, 1350, 10000);
                     sleep(750);
                     armServo.setPosition(0);
-                    moveWPID(12, 0, 0.75);
+                    moveWPID(18, 0, drivePwrStandard);
                     sleep(250);
-                    flywheelShooter.setPower(flywheelPower * 0.975);
+                    flywheelShooter.setPower(flywheelPower * 1.0125);
 
                     intakeOnFast();
                     // flywheelShooter.setPower(flywheelPwr * 1.05);
 
                     //moveWPID(8,0,0.75);
-                    moveWPID(0, 32, 0.75);
+                    moveWPID(0, 34, drivePwrStandard);
                     sleep(2000);
 
-                   // intakeOff();
+                    // intakeOff();
 
                     sleep(1000);
 
-                    rotate(1, .5);
+                   // rotate(2, .25);
 
 
                     flywheelServo.setPosition(1);
@@ -257,25 +268,30 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
                     flywheelShooter.setPower(0);
 
                     // moveWPID(10,0,0.3);
-                    rotate(85, .8);
+                    rotate(84, .75);
 
 
                     // 4 back
                     // 36 side
 
-                    // moveWPID(0,4,0.3);
-                    moveWPID(-32, 0, 0.75);
+                    moveWPID(0,-6,0.3);
+                    moveWPID(-54, 0, drivePwrStandard);
                     armServo.setPosition(1);
                     sleep(1000);
-                    moveWPID(0, 16, 0.75);
-                    moveWPID(98.5, 0, 1.0);
+                    ArmEncodersNew(1.0,-1350,1000);
+                    sleep(1000);
+                    moveWPID(0, 12, drivePwrStandard);
+                    moveWPID(138, 0, 0.75);
+
+                    ArmEncodersNew(1.0,1350,1000);
+                    sleep(250);
                     armServo.setPosition(0);
                     sleep(500);
-                    moveWPID(12, 0, 0.75);
+                    moveWPID(12, 0, drivePwrStandard);
                     ArmEncodersNew(1.0, -1350, 10000);
                     armServo.setPosition(1);
 
-                    moveWPID(-28, 0, 1.0);
+                    moveWPID(-36, 0, drivePwrStandard);
 
                     stop();
                     // moveWPID(-8, -12,0.75);
@@ -287,11 +303,11 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
                 if (commandCount == 3) {
                     intakeReverse();
 
-                    flywheelShooter.setPower(flywheelPower * 0.98);
-                    moveWPID(4, 0, 0.5);
+                    flywheelShooter.setPower(flywheelPower * 1.0);
+                    moveWPID(10, 0, 0.5);
 
 
-                    moveWPID(0, 15, 0.8);
+                    moveWPID(0, 15, 0.35);
 
                     //intakeOff();
 
@@ -303,15 +319,15 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
                     sleep(1500);
 
 
-                    //intakeReverse();
 
                     moveWPID(0, -6, 0.75);
-                    moveWPID(-2, 0, 0.75);
+                    moveWPID(-6, 0, 0.75);
 
-                    //intakeOff();
 
-                    rotate(0.5,-7);
 
+
+
+                    // shoot 3 picked up rings
                     for (int i = 0; i < 3; i += 1) {
 
                         flywheelServo.setPosition(1);
@@ -330,10 +346,10 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
                     intakeOnFast();
                     //moveWPID(3, 0, 0.75);
 
-                    moveWPID(0, 17, 0.5);
+                    moveWPID(0, 12, 0.35);
                     sleep(1000);
-                   // intakeOff();
-                    moveWPID(0, -30, 0.75);
+                    // intakeOff();
+                    moveWPID(0, -20, 0.75);
                     //moveWPID(-17, 0, 0.75);
 
                     sleep(250);
@@ -350,10 +366,43 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
                     }
                     flywheelShooter.setPower(0);
-                    rotate(85, 1.0);
-                    moveWPID(56, -10, 1.0);
-                    CommonMethodForArm();
-                    moveWPID(-48, 8, 1.0);
+                    rotate(85, 0.75);
+                    moveWPID(68, -4, 1.0);
+                    //CommonMethodForArm();
+                    ArmEncodersNew(1, 1350, 10000);
+                    sleep(250);
+                    armServo.setPosition(0);
+                    moveWPID(8, 0,0.75);
+                    ArmEncodersNew(1, -1350, 10000);
+
+                    moveWPID(0, 14, 1.0);
+                    moveWPID(-65,0,1.0);
+                    stop();
+
+
+
+                    // open arm servo
+                    //rotate(-2, 1.0);
+                    // end of park
+                    moveWPID(0,-12,1);
+                    moveWPID(-160,0,1.0);
+
+                    // close servo
+                    armServo.setPosition(1);
+                    sleep(1000);
+                    moveWPID(172,0,1.0);
+                    armServo.setPosition(0);
+                    sleep(350);
+                    moveWPID(14, 0, drivePwrStandard);
+                    ArmEncodersNew(1.0,-1350,1000);
+                    moveWPID(-60, 8, 1.0);
+
+
+
+
+
+
+
                     commandCount++;
                     stop();
                 }
@@ -559,49 +608,49 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
     }
 
 
-        public double SetRPMnew ( double targetRPM, double motorPower){
-            //  if (!shooterRPMVars.isValid) return motorPower;
+    public double SetRPMnew ( double targetRPM, double motorPower){
+        //  if (!shooterRPMVars.isValid) return motorPower;
 
-            if (!shooterRPMVars.inWhile) {
-                double pwrMul = shooterRPMVars.pwrMul;
+        if (!shooterRPMVars.inWhile) {
+            double pwrMul = shooterRPMVars.pwrMul;
 
-                double time_step = shooterRPMVars.time_step;
+            double time_step = shooterRPMVars.time_step;
 
-                double time_step_mul = shooterRPMVars.time_step_mul;
+            double time_step_mul = shooterRPMVars.time_step_mul;
 
-                double kp = shooterRPMVars.kp;
-                double ki = shooterRPMVars.ki;
-                double kd = shooterRPMVars.kd;
+            double kp = shooterRPMVars.kp;
+            double ki = shooterRPMVars.ki;
+            double kd = shooterRPMVars.kd;
 
 
-                shooterRPMVars.errorRPM = targetRPM + getRPM(time_step);
-                shooterRPMVars.curPower = motorPower;
-                shooterRPMVars.lastErr = 0;
-                shooterRPMVars.integralErr = 0;
-                shooterRPMVars.inLockCount = 0;
-                shooterRPMVars.loop_count = 0;
-                shooterRPMVars.inWhile = true;
-                shooterRPMVars.curTime = shooterRPMVars.timer.time();
-                shooterRPMVars.timer.reset();
+            shooterRPMVars.errorRPM = targetRPM + getRPM(time_step);
+            shooterRPMVars.curPower = motorPower;
+            shooterRPMVars.lastErr = 0;
+            shooterRPMVars.integralErr = 0;
+            shooterRPMVars.inLockCount = 0;
+            shooterRPMVars.loop_count = 0;
+            shooterRPMVars.inWhile = true;
+            shooterRPMVars.curTime = shooterRPMVars.timer.time();
+            shooterRPMVars.timer.reset();
+        } else {
+
+            //              while (loop_count < 1000) {
+            shooterRPMVars.deltaError = shooterRPMVars.errorRPM - shooterRPMVars.lastErr;
+            shooterRPMVars.lastErr = shooterRPMVars.errorRPM;
+            double time_int = shooterRPMVars.timer.time();
+            shooterRPMVars.timer.reset();
+
+            double derivative = shooterRPMVars.deltaError / time_int;
+
+
+            if (Math.abs(shooterRPMVars.errorRPM) < 5) {
+                shooterRPMVars.integralErr += shooterRPMVars.errorRPM * time_int;
             } else {
-
-                //              while (loop_count < 1000) {
-                shooterRPMVars.deltaError = shooterRPMVars.errorRPM - shooterRPMVars.lastErr;
-                shooterRPMVars.lastErr = shooterRPMVars.errorRPM;
-                double time_int = shooterRPMVars.timer.time();
-                shooterRPMVars.timer.reset();
-
-                double derivative = shooterRPMVars.deltaError / time_int;
-
-
-                if (Math.abs(shooterRPMVars.errorRPM) < 5) {
-                    shooterRPMVars.integralErr += shooterRPMVars.errorRPM * time_int;
-                } else {
-                    shooterRPMVars.integralErr += 0;
+                shooterRPMVars.integralErr += 0;
 //                integralErr += ((errorRPM > 0) ? 5 * time_int : -5 * time_int) ;
-                }
+            }
 
-                double deltaPower = -1 * shooterRPMVars.time_step_mul * ((shooterRPMVars.errorRPM * shooterRPMVars.kp) + (shooterRPMVars.integralErr * shooterRPMVars.ki) + (derivative * shooterRPMVars.kd));
+            double deltaPower = -1 * shooterRPMVars.time_step_mul * ((shooterRPMVars.errorRPM * shooterRPMVars.kp) + (shooterRPMVars.integralErr * shooterRPMVars.ki) + (derivative * shooterRPMVars.kd));
 
             /* double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
                             (Math.abs(errorRPM) > 10)  ? 1.0/4.0 :
@@ -609,14 +658,14 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
                                     (Math.abs(errorRPM) > 2.5)  ? 01.0/64.0 : (1.0/128.0) ;
 
              */
-                shooterRPMVars.curPower += (deltaPower * shooterRPMVars.pwrMul);
+            shooterRPMVars.curPower += (deltaPower * shooterRPMVars.pwrMul);
 
-                if (shooterRPMVars.curPower > 0.7) shooterRPMVars.curPower = 0.7;
-                if (shooterRPMVars.curPower < -0.7) shooterRPMVars.curPower = -0.7;
+            if (shooterRPMVars.curPower > 0.7) shooterRPMVars.curPower = 0.7;
+            if (shooterRPMVars.curPower < -0.7) shooterRPMVars.curPower = -0.7;
 
-                flywheelShooter.setPower(shooterRPMVars.curPower);
-                double RPM = getRPM(shooterRPMVars.time_step);
-                shooterRPMVars.errorRPM = targetRPM + RPM;
+            flywheelShooter.setPower(shooterRPMVars.curPower);
+            double RPM = getRPM(shooterRPMVars.time_step);
+            shooterRPMVars.errorRPM = targetRPM + RPM;
             /*
             telemetry.addData("RPM = ", RPM);
             telemetry.addData("errorRPM = ", errorRPM);
@@ -626,31 +675,32 @@ public class Auto_Red_Left_multiprocess extends UltimateGoalAutonomousBaseOpenCV
 
              */
 
-                if (Math.abs(shooterRPMVars.errorRPM) <2.5) {
-                    if (shooterRPMVars.inLockCount > 1) {
-                        shooterRPMVars.pwrMul = 0.5;
-                    }
-                    shooterRPMVars.inLockCount += 1;
-                    if (shooterRPMVars.inLockCount > 5) {
-                       // shooterRPMVars.inWhile = false;
-                       // shooterRPMVars.isValid = false;
-                        return (shooterRPMVars.curPower);
-
-                    }
-                } else {
-                    shooterRPMVars.inLockCount = 0;
+            if (Math.abs(shooterRPMVars.errorRPM) <2.5) {
+                if (shooterRPMVars.inLockCount > 1) {
                     shooterRPMVars.pwrMul = 1.0;
                 }
-                //               }
-            }
-            if (shooterRPMVars.loop_count > 1000) {
-                //shooterRPMVars.inWhile = false;
-                //shooterRPMVars.isValid = false;
+                shooterRPMVars.inLockCount += 1;
+                if (shooterRPMVars.inLockCount > 5) {
+                    // shooterRPMVars.inWhile = false;
+                    shooterRPMVars.atTarget = true;
+                    return (shooterRPMVars.curPower);
 
+                }
+            } else {
+                shooterRPMVars.inLockCount = 0;
+                shooterRPMVars.pwrMul = 1.0;
+                shooterRPMVars.atTarget = false;
             }
-            return (shooterRPMVars.curPower);
+            //               }
         }
+        if (shooterRPMVars.loop_count > 1000) {
+            //shooterRPMVars.inWhile = false;
+            //shooterRPMVars.isValid = false;
 
+        }
+        return (shooterRPMVars.curPower);
     }
+
+}
 
 

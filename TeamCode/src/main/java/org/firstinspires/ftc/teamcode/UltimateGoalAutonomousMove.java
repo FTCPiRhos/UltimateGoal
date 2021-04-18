@@ -2,9 +2,11 @@ package org.firstinspires.ftc.teamcode;
 
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 @Autonomous(name="Auto Ultimate Goal Move", group="PiRhos")
 //@Disabled
+@Disabled
 public class UltimateGoalAutonomousMove extends UltimateGoalAutonomousBase {
 
     @Override

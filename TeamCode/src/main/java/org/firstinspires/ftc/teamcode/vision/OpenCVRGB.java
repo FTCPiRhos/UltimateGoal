@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.vision;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.vuforia.Vec3F;
@@ -22,7 +23,7 @@ import org.openftc.easyopencv.OpenCvPipeline;
 
 @Autonomous(name="OpenCV RGB Test", group="PiRhos")
 //@Disabled
-public class OpenCVRGB extends AutonBaseWebcamTest
+@Disabled public class OpenCVRGB extends AutonBaseWebcamTest
 {
     OpenCVTestPipeline pipeline;
     OpenCvCamera webcam;

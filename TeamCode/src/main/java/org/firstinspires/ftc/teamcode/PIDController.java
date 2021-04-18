@@ -2,6 +2,9 @@ package org.firstinspires.ftc.teamcode;
 
 // PID controller courtesy of Peter Tischler, with modifications.
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
+@Disabled
 public class PIDController
 {
     private double m_P;                     // factor for "proportional" control
