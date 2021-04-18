@@ -171,6 +171,7 @@ public class Comp5Teleop2 extends LinearOpMode {
         double intakePower;
         double PowershotPower = 0;
         boolean firstPS = true;
+        // target speed for shooter
         double targetRPMGoal = -167;
         boolean firstGoalShot = true;
         double oldLFPos = 0;
@@ -209,7 +210,7 @@ public class Comp5Teleop2 extends LinearOpMode {
             RBPos = backRight.getCurrentPosition();
 
 
-
+            // multipliers for power
             intakePower = 1.6 * flywheelPower;
             DrivePwrMulTrigger = 1.0 - (gamepad1.right_trigger);
             DrivePwrMulTriggerFast = 0.5 + (gamepad1.left_trigger * 1/2);
@@ -217,7 +218,7 @@ public class Comp5Teleop2 extends LinearOpMode {
             calibPwr = flywheelPower;
             // init variables
 
-
+            // flip control
             if (gamepad1.right_bumper) sens = false;
             if (gamepad1.left_bumper) sens = true;
             if (sens) {
@@ -226,6 +227,7 @@ public class Comp5Teleop2 extends LinearOpMode {
             if (sens == false) {
                 sensMult = -1.0;
             }
+            //init power vars
             double arm = gamepad2.right_stick_y;
             double y = -gamepad1.left_stick_y * sensMult;
             double x = gamepad1.left_stick_x * sensMult;
@@ -255,6 +257,7 @@ public class Comp5Teleop2 extends LinearOpMode {
                 RBPower /= max;
             }
 
+            // check for flip
             if ((LFPos - oldLFPos > 0) && (LFPower < 0)) {
                 if (LFPower == 0) {
 
@@ -343,6 +346,7 @@ public class Comp5Teleop2 extends LinearOpMode {
                 }
             }
 
+            // calculate multiplier
             if (LBDrivePwrMul > 1) LBDrivePwrMul =1;
             if (LFDrivePwrMul > 1) LFDrivePwrMul =1;
             if (RBDrivePwrMul > 1) RBDrivePwrMul =1;
@@ -352,7 +356,7 @@ public class Comp5Teleop2 extends LinearOpMode {
             DrivePwrMul = Math.min(DrivePwrMul, RBDrivePwrMul);
             DrivePwrMul = Math.min(DrivePwrMul, RFDrivePwrMul);
 
-
+            // set power calc
             LFPower = LFPower * DrivePwrMul * DrivePwrMulTrigger * DrivePwrMulTriggerFast;
             LBPower = LBPower * DrivePwrMul * DrivePwrMulTrigger * DrivePwrMulTriggerFast;
             RFPower = RFPower * DrivePwrMul * DrivePwrMulTrigger * DrivePwrMulTriggerFast;
@@ -360,39 +364,42 @@ public class Comp5Teleop2 extends LinearOpMode {
 
 
 
-
+            // arm power override
 
             if (gamepad2.right_trigger>0.5){
                 ArmPower = arm * -1;
             }
             else {
+                // arm power control
                 ArmPower = (armMotor.getCurrentPosition() > 1000 && (ArmPower >=0.1)) ? 0.1 :
                         (armMotor.getCurrentPosition() < 300 && (ArmPower < -0.10)) ? -0.1 : ArmPower ;
             }
 
-
+            // reset init values on arm
             if (gamepad2.dpad_down) {
                 armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
             }
+            // set powers
             frontLeft.setPower(LFPower);
             backLeft.setPower(LBPower);
             frontRight.setPower(RFPower);
             backRight.setPower(RBPower);
             armMotor.setPower(ArmPower);
 
-
+            // servo open
             if (gamepad2.right_bumper == true) armServo.setPosition(0.4);
 
-
+            // servo close
             if (gamepad2.left_bumper == true) armServo.setPosition(1);
 
+            // shoot
             if (gamepad1.dpad_up == true) {
 
                 shoot3times(flywheelPower);
             }
-
+            // blockers up/down
             if (gamepad1.y){
                 if (blockersDown == false){
                     ringBlockerLeft.setPosition(leftBlockerBlockingPos);
@@ -413,15 +420,16 @@ public class Comp5Teleop2 extends LinearOpMode {
 
             if (gamepad1.dpad_right || gamepad2.dpad_up)
                 flywheelShooter.setPower(flywheelPower);
-
+            // shooter off
             if (gamepad1.dpad_down == true) flywheelShooter.setPower(0);
+            // shoot 1x
 
             if (gamepad1.dpad_left == true) {
                 flywheelServo.setPosition(shooterServoFlickPos);
                 sleep(500);
                 flywheelServo.setPosition(shooterServoRestPos);
             }
-
+                // shooter pwr up or down
             if (gamepad2.b) {
                 targetRPMGoal -= 1;
                 sleep(100);
@@ -437,8 +445,7 @@ public class Comp5Teleop2 extends LinearOpMode {
             flywheelPower = calibPwr * calibMult;
 
 
-            //double intakeToppwr = gamepad2.left_stick_y;
-            //double intakeBottompwr = gamepad2.left_stick_y;
+           // intake n
             if (gamepad1.x == true) {
 
                 intakeTop.setPower(-1 * intakeTopPwr);
@@ -447,7 +454,7 @@ public class Comp5Teleop2 extends LinearOpMode {
             }
 
 
-
+            // intake reverse
 
             if (gamepad1.b == true) {
                 intakeBottom.setPower(intakeBottomPwr);
@@ -458,7 +465,7 @@ public class Comp5Teleop2 extends LinearOpMode {
             }
 
 
-
+            // calib to goal
             if (gamepad2.x) {
                 firstGoalShot = true;
                 calibMult = 1.0;
@@ -466,20 +473,21 @@ public class Comp5Teleop2 extends LinearOpMode {
 
             }
 
-
+            // shooter trigger fwd and back
             if (gamepad1.a) {
                 flywheelServo.setPosition(shooterServoFlickPos);
                 sleep(500);
                 flywheelServo.setPosition(shooterServoRestPos);
                 //flywheelShooter.setPower(PowershotPower);
             }
+            // power shot calib
             if (gamepad2.y) {
 
                 shooterRPMVars.isPowershot = true;
                 shooterRPMVars.isValid = true;
 
             }
-
+            // take old pos reading
             oldLFPos = LFPos;
             oldLBPos = LBPos;
             oldRFPos = RFPos;

@@ -108,7 +108,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
     }
 
     private AutoRedLeftNewDrive.MoveWPIDVars moveWPIDVars = new AutoRedLeftNewDrive.MoveWPIDVars();
-
+    // target shooter speed
     double targetRPMGoal = -167;
     double flywheelPower = 0.6;
     double commandCount = 0;
