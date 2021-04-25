@@ -56,6 +56,10 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     protected ElapsedTime runtime = new ElapsedTime();
 
     static final double COUNTS_PER_MOTOR_REV = 537.6;// eg: TETRIX Motor Encoder
+    static final double COUNTS_PER_ODO_REV = 8192;
+    static final double ODO_WHEEL_DIAMETER_INCHES = 2;
+    static final double COUNTS_PER_INCH_ODO = COUNTS_PER_ODO_REV / (ODO_WHEEL_DIAMETER_INCHES * Math.PI);
+
     static final double COUNTS_PER_ARM_MOTOR_REV = 2786;
     static final double DRIVE_GEAR_REDUCTION = 2.0 / 4.0;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 3.937;   // For figuring circumference - 100mm
@@ -93,6 +97,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     protected void initHardware( boolean fOpenCVLeft ) {
 
         frontLeft = hardwareMap.get(DcMotor.class, "left_front");
+        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontRight = hardwareMap.get(DcMotor.class, "right_front");
         backLeft = hardwareMap.get(DcMotor.class, "left_back");
         backRight = hardwareMap.get(DcMotor.class, "right_back");
@@ -104,7 +110,13 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         intakeTop = hardwareMap.get(DcMotor.class,"intake2");
         intakeBottom = hardwareMap.get(DcMotor.class,"intake1");
         intakeTop.setDirection(DcMotor.Direction.FORWARD);
+        intakeTop.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeTop.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         intakeBottom.setDirection(DcMotor.Direction.REVERSE);
+        intakeBottom.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeBottom.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -487,13 +499,13 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         backLeft.setPower(0);
 
 
-        double targetXCount = targetXInches * COUNTS_PER_INCH;
-        double targetYCount = targetYInches * COUNTS_PER_INCH;
+        double targetXCount = targetXInches * COUNTS_PER_INCH_ODO;
+        double targetYCount = targetYInches * COUNTS_PER_INCH_ODO;
         // get starting X and Y position from encoders
         // and solving from equation
 
-        double initialYPos = ( backLeft.getCurrentPosition() + backRight.getCurrentPosition())/2;
-        double initialXPos = ( backRight.getCurrentPosition() - backLeft.getCurrentPosition())/2;
+        double initialYPos = ( intakeBottom.getCurrentPosition() + intakeTop.getCurrentPosition())/2;
+        double initialXPos = ( frontLeft.getCurrentPosition());
         // adding Count + initial
         double targetXPos = targetXCount + initialXPos;
         double targetYPos = targetYCount + initialYPos;
