@@ -202,7 +202,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
 
 
                     // move forward and left to drop off goal
-                    moveWPID(24, -11, 0.4);
+                    moveWPID(24, -11, 0.40);
 
 
                     // arm down
