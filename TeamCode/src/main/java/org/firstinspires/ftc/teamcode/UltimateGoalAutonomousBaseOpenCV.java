@@ -59,6 +59,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     static final double COUNTS_PER_ODO_REV = 8192;
     static final double ODO_WHEEL_DIAMETER_INCHES = 2;
     static final double COUNTS_PER_INCH_ODO = COUNTS_PER_ODO_REV / (ODO_WHEEL_DIAMETER_INCHES * Math.PI);
+    static final double YR10x = 674876.0;
+    static final double YL10x = -650615.0;
+    static final double COUNTS_PER_DEGREE_ODO = ((((YR10x - YL10x)/10)/360) * 0.995);
 
     static final double COUNTS_PER_ARM_MOTOR_REV = 2786;
     static final double DRIVE_GEAR_REDUCTION = 2.0 / 4.0;     // This is < 1.0 if geared UP
@@ -499,13 +502,13 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
         backLeft.setPower(0);
 
 
-        double targetXCount = targetXInches * COUNTS_PER_INCH_ODO;
-        double targetYCount = targetYInches * COUNTS_PER_INCH_ODO;
+        double targetXCount = targetXInches * COUNTS_PER_INCH;
+        double targetYCount = targetYInches * COUNTS_PER_INCH;
         // get starting X and Y position from encoders
         // and solving from equation
 
-        double initialYPos = ( intakeBottom.getCurrentPosition() + intakeTop.getCurrentPosition())/2;
-        double initialXPos = ( frontLeft.getCurrentPosition());
+        double initialYPos = ( backLeft.getCurrentPosition() + backRight.getCurrentPosition())/2;
+        double initialXPos = ( backRight.getCurrentPosition() - backLeft.getCurrentPosition())/2;
         // adding Count + initial
         double targetXPos = targetXCount + initialXPos;
         double targetYPos = targetYCount + initialYPos;
@@ -655,7 +658,6 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             movementDoneX = (Math.abs(errorX)<100) || movementDoneX || (fPosX && errorX<0)|| (!fPosX && errorX>0);
             movementDoneY = (Math.abs(errorY)<100) || movementDoneY || (fposY && errorY <0)|| (!fposY && errorY>0);
             /*
-
             telemetry.addData("ErrX = ", errorX) ;
             telemetry.addData("ErrY = ", errorY) ;
             telemetry.addData("Front Left Encoder =", posFL);
@@ -664,11 +666,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             telemetry.addData("Back Right Encoder =" , posBR);
             telemetry.addData("Power ratio x =" , PwrRatioX);
             telemetry.addData("Power ratio y =" , PwrRatioY);
-
-
-
             telemetry.update();
-
              */
 
 
@@ -688,7 +686,6 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
 
     }
-
     protected void moveFwdAndBackForMilliseconds(double speed, double milliseconds) {
 
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -1050,6 +1047,66 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
 
         return globalAngle;
+
+
+
+
+    }
+
+    public void rotateOdo (double degrees, double power){
+        double initYLeft = intakeBottom.getCurrentPosition();
+        double initYRight = intakeTop.getCurrentPosition();
+        double targetRotationCt = degrees * COUNTS_PER_DEGREE_ODO;
+        boolean done = false;
+        double powerMult = 1;
+        double kp = 1;
+        double deltaRot =0;
+        //degrees += 5;
+
+        while (!done) {
+
+
+            double curYLeft = intakeBottom.getCurrentPosition() - initYLeft;
+            double curYRight = intakeTop.getCurrentPosition() - initYRight;
+
+            double curRot = (curYRight - curYLeft);
+            deltaRot = (Math.abs(targetRotationCt - curRot))/COUNTS_PER_DEGREE_ODO;
+
+            if (deltaRot > 10) kp = 1;
+            else kp = deltaRot/10;
+
+            if (degrees > 0) {
+                done = (curRot >= targetRotationCt) || (deltaRot < 2);
+            }
+            else {
+                done = (curRot <= targetRotationCt) || (deltaRot < 2);
+                powerMult = -1.0;
+            }
+            telemetry.addData("target rotation Ct", targetRotationCt);
+            telemetry.addData("cur rotation", curRot);
+            telemetry.addData("delta rot = ", deltaRot);
+            telemetry.update();
+
+
+            if (!done){
+                frontRight.setPower(-1 * power * powerMult * kp);
+                backRight.setPower(-1 * power * powerMult * kp);
+                frontLeft.setPower(power * powerMult * kp);
+                backLeft.setPower(power * powerMult * kp);
+            }
+
+            telemetry.addData("target rotation Ct", targetRotationCt);
+            telemetry.addData("cur rotation", curRot);
+            telemetry.addData("delta rot = ", deltaRot);
+            telemetry.update();
+
+        }
+
+        frontRight.setPower(0);
+        backRight.setPower(0);
+        frontLeft.setPower(0);
+        backLeft.setPower(0);
+
 
 
 

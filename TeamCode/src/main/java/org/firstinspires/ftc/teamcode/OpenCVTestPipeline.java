@@ -188,12 +188,13 @@ public class OpenCVTestPipeline extends OpenCvPipeline
 
         position = OpenCVTestPipeline.RingPosition.FOUR; // Record our analysis
 
-        // ratio =(cr -cb)/y
-
+        // (r - b) / g
         ratio = ((double) (avg1 - avg2))/ ((double) avg0);
 
+        // ratio > .7
         if ( ratio > FOUR_RING_THRESHOLD )
             position = OpenCVTestPipeline.RingPosition.FOUR;
+        // ratio > .25
         else if ( ratio > ONE_RING_THRESHOLD )
             position = OpenCVTestPipeline.RingPosition.ONE;
         else

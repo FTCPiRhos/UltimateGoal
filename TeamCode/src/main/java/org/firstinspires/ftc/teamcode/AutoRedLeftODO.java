@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Autonomous(name="Auto Red Left New Drive1", group="PiRhos")
-
+@Disabled
 public class AutoRedLeftODO extends UltimateGoalAutonomousBaseOpenCV {
     class SetRPMVars {
         ElapsedTime timer = new ElapsedTime();

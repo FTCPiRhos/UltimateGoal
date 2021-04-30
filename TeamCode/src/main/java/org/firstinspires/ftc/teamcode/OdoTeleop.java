@@ -19,6 +19,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 @TeleOp(name="Cur", group="PiRhos")
+@Disabled
 
 
 
@@ -309,9 +310,9 @@ public class OdoTeleop extends LinearOpMode {
             fwdOdoRightDelta = fwdOdoRightPos - fwdOdoRightOldPos;
             sideOdoDelta = sideOdoPos - sideOdoOldPos;
             //Heading = (fwdOdoRightPos-fwdOdoLeftPos)/COUNTS_PER_DEGREE_ODO % 360;
-            Heading = -1 * getAngle();
+            Heading = (-1 * getAngle())  % 360;
             //thetaY = Heading + 90;
-            thetaY = imuHeading + 90;
+            thetaY = Heading + 90;
 
 
             fwdMovement = (Math.sin(Math.toRadians(thetaY)) * ((fwdOdoLeftDelta + fwdOdoRightDelta)/2 / COUNTS_PER_INCH_ODO))
@@ -534,14 +535,15 @@ public class OdoTeleop extends LinearOpMode {
             telemetry.addData("ODO x coord = ", XCoordinate);
             //telemetry.addData("delta left y odo", fwdOdoLeftDelta);
             //telemetry.addData("delta right y odo", fwdOdoRightDelta);
-            telemetry.addData("y deltas = ", fwdOdoRightPos-fwdOdoLeftPos);
+            //telemetry.addData("y deltas = ", fwdOdoRightPos-fwdOdoLeftPos);
 
-            telemetry.addData("fwdOdoLeftPos = ", fwdOdoLeftPos);
-            telemetry.addData("fwdOdoRightPos = ", fwdOdoRightPos);
+           // telemetry.addData("fwdOdoLeftPos = ", fwdOdoLeftPos);
+          //  telemetry.addData("fwdOdoRightPos = ", fwdOdoRightPos);
             telemetry.addData("heading", Heading);
+            //telemetry.addData("raw imu = ", getAngle());
             telemetry.addData("target shoot heading = ", targetShooterHeading);
             //telemetry.addData("side Odo Pos", sideOdoPos);
-            telemetry.addData("x inches =", sideOdoPos/COUNTS_PER_INCH_ODO);
+            //telemetry.addData("x inches =", sideOdoPos/COUNTS_PER_INCH_ODO);
             //telemetry.addData("Left Y Inches = ", fwdOdoLeftPos/COUNTS_PER_INCH_ODO);
             //telemetry.addData("Right Y Inches = ", fwdOdoRightPos/COUNTS_PER_INCH_ODO);
             //telemetry.addData("sin mult = ", Math.sin(Math.toRadians(thetaY)));
@@ -1199,14 +1201,16 @@ public class OdoTeleop extends LinearOpMode {
         else if (deltaFirstAngle > 180)
             deltaFirstAngle -= 360;
 
-        globalAngle += deltaFirstAngle;
+        globalAngle += (deltaFirstAngle * (360/362.2));
+
+        //globalAngle = angles.firstAngle;
 
         lastAngles = angles;
 
-        telemetry.addData("First Angle = ", angles.firstAngle);
-        telemetry.addData("Second Angle = ", angles.secondAngle);
-        telemetry.addData("Third Angle = ", angles.thirdAngle);
-        telemetry.update();
+        //telemetry.addData("First Angle = ", angles.firstAngle);
+        //telemetry.addData("Second Angle = ", angles.secondAngle);
+        //telemetry.addData("Third Angle = ", angles.thirdAngle);
+        //telemetry.update();
 
 
 
