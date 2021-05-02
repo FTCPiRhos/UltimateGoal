@@ -32,7 +32,7 @@ public class OpenCVTeleop extends LinearOpMode {
         double curTime;
         double deltaError;
 
-        double time_step = 25;
+        double time_step = 25.0;
 
         double time_step_mul = time_step / 50.0;
 
