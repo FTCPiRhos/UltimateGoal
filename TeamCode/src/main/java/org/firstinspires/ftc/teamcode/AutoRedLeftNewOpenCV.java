@@ -4,9 +4,9 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name="Auto Red Left New Drive", group="PiRhos")
+@Autonomous(name="Auto Red Left New Open CV", group="PiRhos")
 
-public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
+public class AutoRedLeftNewOpenCV extends AutoBaseOpenCVShoot {
     class SetRPMVars {
         ElapsedTime timer = new ElapsedTime();
         boolean atTarget = false;
@@ -33,7 +33,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
         int loop_count = 0;
     }
 
-    private AutoRedLeftNewDrive.SetRPMVars shooterRPMVars = new AutoRedLeftNewDrive.SetRPMVars();
+    private AutoRedLeftNewOpenCV.SetRPMVars shooterRPMVars = new AutoRedLeftNewOpenCV.SetRPMVars();
 
     class MoveWPIDVars {
         ElapsedTime timer = new ElapsedTime();
@@ -107,7 +107,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
         double loopcount;
     }
 
-    private AutoRedLeftNewDrive.MoveWPIDVars moveWPIDVars = new AutoRedLeftNewDrive.MoveWPIDVars();
+    private AutoRedLeftNewOpenCV.MoveWPIDVars moveWPIDVars = new AutoRedLeftNewOpenCV.MoveWPIDVars();
     // target shooter speed
     double targetRPMGoal = -171;
     double flywheelPower = 0.6;
@@ -124,7 +124,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
     @Override
     public void runOpMode() {
         // Initialize hardware
-        initHardware(true);
+        initHardware();
         armServo.setPosition(1);
         ringBlockerLeft.setPosition(leftBlockerRestPos);
         ringBlockerRight.setPosition(rightBlockerRestPos);
@@ -133,7 +133,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
 
 
         // Find number of rings + print for drivers
-        OpenCVTestPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000);
+        OpenCVPipelineShoot.RingPosition objectFound = OpenCVRecognizeStack(1000);
 
         telemetry.addData("Object Found: ", objectFound);
         telemetry.update();
@@ -179,19 +179,19 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
 
             if ((commandCount == 2) && (loopCount > 70)) {
                 //if (shooterRPMVars.atTarget == true) {
-                        // shoot 3 rings
+                // shoot 3 rings
                 if (prevCommandCount != commandCount) {
                     telemetry.addData("command count = ", commandCount);
                     telemetry.addData("loop count = ", loopCount);
                     telemetry.update();
-                                prevCommandCount = commandCount;
+                    prevCommandCount = commandCount;
 
 
                 }
-                 shooterTrigger3xNPnew(flywheelPower);
+                shooterTrigger3xNPnew(flywheelPower);
 
-                    if (!moveWPIDVars.inMove) commandCount++;
-               // }
+                if (!moveWPIDVars.inMove) commandCount++;
+                // }
 
             }
 
