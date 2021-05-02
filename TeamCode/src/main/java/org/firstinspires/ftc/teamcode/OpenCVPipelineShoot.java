@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 import org.firstinspires.ftc.teamcode.vision.OpenCVCrCb;
 import org.opencv.core.Core;
+import java.util.ArrayList;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
@@ -12,15 +13,12 @@ import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 @Disabled
-public class OpenCVTestPipeline extends OpenCvPipeline
+public class OpenCVPipelineShoot extends OpenCvPipeline
 {
+// 320 x 240
+    public OpenCVPipelineShoot() {
 
-    public OpenCVTestPipeline( boolean fLeft ) {
-        fLeftPos = fLeft;
-        if ( fLeftPos )
-            REGION1_TOPLEFT_ANCHOR_POINT = new Point( 255, 175 );
-        else
-            REGION1_TOPLEFT_ANCHOR_POINT = new Point( 5, 175);
+            REGION1_TOPLEFT_ANCHOR_POINT = new Point( 0, 0 );
     }
     /*
      * An enum to define the skystone position
@@ -37,14 +35,16 @@ public class OpenCVTestPipeline extends OpenCvPipeline
      */
     static final Scalar BLUE = new Scalar(0, 0, 255);
     static final Scalar GREEN = new Scalar(0, 255, 0);
+    static final Scalar WHITE = new Scalar(255,255,255);
+    static final Scalar YELLOW = new Scalar(0,255,255);
 
     /*
      * The core values which define the location and size of the sample regions
      */
     boolean fLeftPos = false;
     Point REGION1_TOPLEFT_ANCHOR_POINT = null;
-    static final int REGION_WIDTH = 30;
-    static final int REGION_HEIGHT = 40;
+    static final int REGION_WIDTH = 320;
+    static final int REGION_HEIGHT = 60;
     // this is thresholds for return values
     final double FOUR_RING_THRESHOLD = 0.7;
     final double ONE_RING_THRESHOLD = 0.25;
@@ -69,20 +69,25 @@ public class OpenCVTestPipeline extends OpenCvPipeline
     Point region1_pointA;
     Point region1_pointB;
 
+    Point R1TopLeft;
+    Point R2TopLeft;
+    Point R1BottomRight;
+    Point R2BottomRight;
+
+
     /*
      * Working variables
      */
     Mat region1_Cb;
     Mat YCrCb = new Mat();
+    Mat RGB = new Mat();
     Mat Cb = new Mat();
     int avg0;
     int avg1;
     int avg2;
-    int numRows;
-    int numColumns;
     double ratio;
     // Volatile since accessed by OpMode thread w/o synchronization
-    private volatile OpenCVTestPipeline.RingPosition position = OpenCVTestPipeline.RingPosition.FOUR;
+    private volatile OpenCVPipelineShoot.RingPosition position = OpenCVPipelineShoot.RingPosition.FOUR;
 
     /*
      * This function takes the RGB frame, converts to YCrCb,
@@ -90,8 +95,10 @@ public class OpenCVTestPipeline extends OpenCvPipeline
      */
     void inputToCb(Mat input)
     {
-        Imgproc.cvtColor(input, YCrCb, Imgproc.COLOR_RGB2YCrCb);
-        Core.extractChannel(YCrCb, Cb, 1);
+        //RGBA -> RGB
+       Imgproc.cvtColor(input, RGB,1);
+       Imgproc.cvtColor(input,YCrCb,Imgproc.COLOR_RGB2YCrCb);
+        //Core.extractChannel(YCrCb, Cb, 1);
     }
 
     @Override
@@ -121,10 +128,6 @@ public class OpenCVTestPipeline extends OpenCvPipeline
                 REGION1_TOPLEFT_ANCHOR_POINT.x + REGION_WIDTH,
                 REGION1_TOPLEFT_ANCHOR_POINT.y + REGION_HEIGHT);
         region1_Cb = YCrCb.submat(new Rect(region1_pointA, region1_pointB));
-        numRows = firstFrame.rows();
-        numColumns = firstFrame.cols();
-
-
     }
 
     @Override
@@ -169,6 +172,12 @@ public class OpenCVTestPipeline extends OpenCvPipeline
          * Get the Cb channel of the input frame after conversion to YCrCb
          */
         inputToCb(input);
+        Imgproc.rectangle(
+                input, // Buffer to draw on
+                region1_pointA, // First point which defines the rectangle
+                region1_pointB, // Second point which defines the rectangle
+                GREEN, // The color the rectangle is drawn in
+                -1);
 
         /*
          * Compute the average pixel value of each submat region. We're
@@ -177,67 +186,168 @@ public class OpenCVTestPipeline extends OpenCvPipeline
          * pixel value of the 3-channel image, and referenced the value
          * at index 2 here.
          */
-        avg0 = (int) Core.mean(region1_Cb).val[0];
-        avg1 = (int) Core.mean(region1_Cb).val[1];
-        avg2 = (int) Core.mean(region1_Cb).val[2];
+        boolean adjacentRed = false;
+        ArrayList<Point> redPoints = new ArrayList<Point>();
 
-        /*
-         * Draw a rectangle showing sample region 1 on the screen.
-         * Simply a visual aid. Serves no functional purpose.
-         */
+
+        for (int dx = 0; dx < REGION_WIDTH; dx ++){
+            for (int dy = 0; dy < REGION_HEIGHT; dy++){
+                double [] RGB = input.get(dy,dx);
+                region1_pointA = new Point(
+                        dx,
+                        dy);
+                region1_pointB = new Point(
+                        dx + 1,
+                        dy + 1);
+
+                if (RGB != null) {
+                    double red = RGB[0];
+                    double green = RGB[1];
+                    double blue = RGB[2];
+
+                    //double red = ((298.082 * Y) / 256) + ((408.583 * Cr) / 256) - 222.921;
+                    //double green = ((298.082 * Y) / 256) - ((100.291 * Cb) / 256) - ((208.120 * Cr)/256) + 135.576;
+                    //double blue = ((298.082 * Y) / 256) + ((516.412 * Cb)/256) - 276.836;
+
+
+
+                    if ((red > 30) && (red > (1.5 * green)) && (red > (1.5 * blue)) ){
+                        redPoints.add(region1_pointA);
+                        /*
+                        Imgproc.rectangle(
+                                input,
+                                region1_pointA,
+                                region1_pointB,
+                                WHITE);
+
+                         */
+
+
+
+
+
+                    }
+
+                    }
+
+
+
+
+            }
+        }
+
+        double xObject1 = 320;
+        double xObject2 = 0;
+        for(Point red: redPoints){
+            Point rPlus1 = new Point(red.x + 1, red.y + 1);
+            if (red.x > xObject2) xObject2 = red.x;
+            if (red.x < xObject1) xObject1 = red.x;
+            Imgproc.rectangle(
+                    input,
+                    red,
+                    rPlus1,
+                    WHITE);
+        }
+
+
+        double R1P1X = 320;
+        double R1P1Y = 240;
+
+        double R1P2X = 0;
+        double R1P2Y = 0;
+
+        double R2P1X = 320;
+        double R2P1Y = 240;
+
+        double R2P2X = 0;
+        double R2P2Y = 0;
+
+        for(Point red: redPoints){
+            if (Math.abs(red.x - xObject1) < 15){
+                // This is Rect 1
+
+                if (red.x < R1P1X) R1P1X = red.x;
+                if (red.y < R1P1Y) R1P1Y = red.y;
+
+                if (red.x > R1P2X) R1P2X = red.x;
+                if (red.y > R1P2Y) R1P2Y = red.y;
+
+
+            }
+
+            if (Math.abs(red.x - xObject2) < 15){
+                // This is Rect 1
+
+                if (red.x < R2P1X) R2P1X = red.x;
+                if (red.y < R2P1Y) R2P1Y = red.y;
+
+                if (red.x > R2P2X) R2P2X = red.x;
+                if (red.y > R2P2Y) R2P2Y = red.y;
+
+
+            }
+        }
+
+        R1TopLeft = new Point(R1P1X,R1P1Y);
+        R1BottomRight = new Point(R1P2X,R1P2Y);
+        R2TopLeft = new Point(R2P1X,R2P1Y);
+        R2BottomRight = new Point(R2P2X,R2P2Y);
+
         Imgproc.rectangle(
-                input, // Buffer to draw on
-                region1_pointA, // First point which defines the rectangle
-                region1_pointB, // Second point which defines the rectangle
-                BLUE, // The color the rectangle is drawn in
-                2); // Thickness of the rectangle lines
+                input,
+                R1TopLeft,
+                R1BottomRight,
+                YELLOW,
+                -1
 
-        position = OpenCVTestPipeline.RingPosition.FOUR; // Record our analysis
+        );
 
-        // (cr - cb) / y
-        ratio = ((double) (avg1 - avg2))/ ((double) avg0);
-
-        // ratio > .7
-        if ( ratio > FOUR_RING_THRESHOLD )
-            position = OpenCVTestPipeline.RingPosition.FOUR;
-        // ratio > .25
-        else if ( ratio > ONE_RING_THRESHOLD )
-            position = OpenCVTestPipeline.RingPosition.ONE;
-        else
-            position = OpenCVTestPipeline.RingPosition.NONE;
-
-        /*
-         * Draw a solid rectangle on top of the chosen region.
-         * Simply a visual aid. Serves no functional purpose.
-         */
         Imgproc.rectangle(
-                input, // Buffer to draw on
-                region1_pointA, // First point which defines the rectangle
-                region1_pointB, // Second point which defines the rectangle
-                GREEN, // The color the rectangle is drawn in
-                -1); // Negative thickness means solid fill
+                input,
+                R2TopLeft,
+                R2BottomRight,
+                BLUE,
+                -1
 
-        /*
-         * Render the 'input' buffer to the viewport. But note this is not
-         * simply rendering the raw camera feed, because we called functions
-         * to add some annotations to this buffer earlier up.
-         */
+        );
+
+
+
+
+
+
+
+
+
+
         return input;
     }
 
     /*
      * Call this from the OpMode thread to obtain the latest analysis
      */
+
     public RingPosition getAnalysis()
     {
         return position;
     }
-    public int NumRows(){
-        return numRows;
+
+    public Point getR1TopLeft(){
+        return R1TopLeft;
     }
 
-    public int NumColumns(){
-        return numColumns;
+    public Point getR1BottomRight(){
+        return R1BottomRight;
     }
+
+    public Point getR2TopLeft(){
+        return R2TopLeft;
+    }
+
+    public Point getR2BottomRight(){
+        return R2BottomRight;
+    }
+
+
 }
 

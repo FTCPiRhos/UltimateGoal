@@ -1,31 +1,26 @@
 package org.firstinspires.ftc.teamcode;
 
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.GyroSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvCameraRotation;
+import org.openftc.easyopencv.OpenCvInternalCamera;
 
-@TeleOp(name="Cur", group="PiRhos")
-@Disabled
+@TeleOp(name="Current Teleop OpenCV.", group="PiRhos")
 
 
 
 
 
-public class OdoTeleop extends LinearOpMode {
+public class OpenCVTeleop extends LinearOpMode {
     class SetRPMVars {
         ElapsedTime timer = new ElapsedTime();
         boolean isValid = false;
@@ -57,12 +52,7 @@ public class OdoTeleop extends LinearOpMode {
 
 
 
-    BNO055IMU               imu;
-    Orientation lastAngles = new Orientation();
-    double                  globalAngle, power = .30, correction;
-    GyroSensor gyro;
-    Orientation angles;
-    Acceleration gravity;
+
 
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor frontLeft = null;
@@ -78,22 +68,13 @@ public class OdoTeleop extends LinearOpMode {
     private Servo ringBlockerRight = null;
     private Servo ringBlockerLeft = null;
 
-    static final double COUNTS_PER_MOTOR_REV = 537.6;// eg: TETRIX Motor Encoder
-    static final double COUNTS_PER_ODO_REV = 8192;
+    static final double COUNTS_PER_MOTOR_REV = 537.6;    // eg: TETRIX Motor Encoder
     static final double DRIVE_GEAR_REDUCTION = 2.0 / 2;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 3.937;   // For figuring circumference - 100mm
-    static final double ODO_WHEEL_DIAMETER_INCHES = 2;
     static final double COUNTS_PER_INCH = 1.45 * (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
-    static final double COUNTS_PER_INCH_ODO = COUNTS_PER_ODO_REV / (ODO_WHEEL_DIAMETER_INCHES * Math.PI);
-
     static final double DRIVE_SPEED_SLOW = 0.4;
     static final double DRIVE_SPEED = 0.7;
-    static final double YR10x = 674876.0;
-    static final double YL10x = -650615.0;
-    static final double COUNTS_PER_DEGREE_ODO = ((((YR10x - YL10x)/10)/360) * 0.995);
-
-
     double intakeBottomShooterPwr = 0.7;
     double intakeBottomPwr = -0.95;
     double intakeTopPwr = 0.95;
@@ -106,42 +87,13 @@ public class OdoTeleop extends LinearOpMode {
     double rightBlockerBlockingPos = 1;
     double leftBlockerBlockingPos = 0.635;
     boolean blockersDown = false;
-    double fwdOdoLeftOldPos = 0;
-    double fwdOdoLeftPos;
-    double fwdOdoRightOldPos = 0;
-    double fwdOdoRightPos;
+    static final double YR10x = 674876.0;
+    static final double YL10x = -650615.0;
+    static final double COUNTS_PER_DEGREE_ODO = ((((YR10x - YL10x)/10)/360) * 0.995);
+    OpenCvInternalCamera webcam;
+    StarterStackDeterminationPipeline old_pipeline;
+    OpenCVPipelineShoot pipeline;
 
-    double sideOdoPos;
-    double sideOdoOldPos = 0;
-
-    double deltaY = 0;
-
-    double fwdOdoLeftDelta;
-    double fwdOdoRightDelta;
-    double sideOdoDelta;
-
-
-    double fwdMovement;
-    double sideMovement;
-    double headingChange;
-
-    double targetShooterHeading;
-    double distanceToHighGoal;
-
-    double highGoalXCoordinate = -12;
-    double highGoalYCoordinate = 54;
-
-    double YdistHighGoal;
-    double XdistHighGoal;
-
-
-
-
-    double XCoordinate = 0;
-    double YCoordinate = 0;
-    double Heading = 0;
-    double thetaY = Heading + 90;
-    double imuHeading = 0;
     // 1 is parallel on right
 
 
@@ -168,39 +120,13 @@ public class OdoTeleop extends LinearOpMode {
         ringBlockerLeft = hardwareMap.get(Servo.class,"right_blocker");
         ringBlockerRight = hardwareMap.get(Servo.class,"left_blocker");
 
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
-        parameters.loggingEnabled      = true;
-        parameters.loggingTag          = "IMU";
-        parameters.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        imu.initialize(parameters);
-
-
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-
         backLeft.setDirection((DcMotor.Direction.REVERSE));
-        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-
         frontRight.setDirection(DcMotor.Direction.FORWARD);
-        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
         backRight.setDirection(DcMotor.Direction.FORWARD);
-        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-
         armMotor.setDirection(DcMotor.Direction.FORWARD);
         armServo.setDirection(Servo.Direction.FORWARD);
         ringBlockerLeft.setDirection(Servo.Direction.FORWARD);
@@ -212,13 +138,6 @@ public class OdoTeleop extends LinearOpMode {
         intakeBottom = hardwareMap.get(DcMotor.class, "intake1");
         intakeTop.setDirection(DcMotor.Direction.FORWARD);
         intakeBottom.setDirection(DcMotor.Direction.REVERSE);
-        intakeTop.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intakeTop.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        intakeBottom.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intakeBottom.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-
 
         flywheelShooter = hardwareMap.get(DcMotor.class, "flywheel_shooter");
         flywheelShooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -236,6 +155,27 @@ public class OdoTeleop extends LinearOpMode {
         armServo.setPosition(1);
         ringBlockerLeft.setPosition(leftBlockerRestPos);
         ringBlockerRight.setPosition(rightBlockerRestPos);
+
+        // init cam
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        webcam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
+        old_pipeline = new StarterStackDeterminationPipeline(true);
+        pipeline = new OpenCVPipelineShoot();
+        webcam.setPipeline(pipeline);
+
+        // We set the viewport policy to optimized view so the preview doesn't appear 90 deg
+        // out when the RC activity is in portrait. We do our actual image processing assuming
+        // landscape orientation, though.
+        webcam.setViewportRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW);
+
+        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                webcam.startStreaming(320,240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+            }
+        });
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -257,7 +197,7 @@ public class OdoTeleop extends LinearOpMode {
         double RFDrivePwrMul = 1;
         double LBDrivePwrMul = 1;
         double RBDrivePwrMul = 1;
-        double DrivePwrMul = 1;
+        double DrivePwrMul;
         double DrivePwrMulTrigger;
         double DrivePwrMulTriggerFast;
         double intakePower;
@@ -279,10 +219,7 @@ public class OdoTeleop extends LinearOpMode {
         boolean RFflip = false;
         boolean RBflip = false;
 
-
-
-
-
+        //boolean drivePwrController = false;
 
         while (opModeIsActive()) {
             if (firstGoalShot){
@@ -299,48 +236,14 @@ public class OdoTeleop extends LinearOpMode {
             }
 
             // motor pos get
-
-
-            fwdOdoLeftPos = intakeBottom.getCurrentPosition();
-            fwdOdoRightPos = intakeTop.getCurrentPosition();
-            sideOdoPos = frontRight.getCurrentPosition();
-
-            deltaY = fwdOdoLeftPos - fwdOdoRightPos;
-            fwdOdoLeftDelta = fwdOdoLeftPos - fwdOdoLeftOldPos;
-            fwdOdoRightDelta = fwdOdoRightPos - fwdOdoRightOldPos;
-            sideOdoDelta = sideOdoPos - sideOdoOldPos;
-            //Heading = (fwdOdoRightPos-fwdOdoLeftPos)/COUNTS_PER_DEGREE_ODO % 360;
-            Heading = (-1 * getAngle())  % 360;
-            //thetaY = Heading + 90;
-            thetaY = Heading + 90;
-
-
-            fwdMovement = (Math.sin(Math.toRadians(thetaY)) * ((fwdOdoLeftDelta + fwdOdoRightDelta)/2 / COUNTS_PER_INCH_ODO))
-            + (Math.sin(Math.toRadians(Heading)) * (sideOdoDelta / COUNTS_PER_INCH_ODO));
-            sideMovement = (Math.cos(Math.toRadians(thetaY)) * ((fwdOdoLeftDelta + fwdOdoRightDelta)/2 / COUNTS_PER_INCH_ODO))
-                    + (Math.cos(Math.toRadians(Heading)) * (sideOdoDelta / COUNTS_PER_INCH_ODO));
-
-            YCoordinate += fwdMovement;
-            XCoordinate += sideMovement;
-
-            // the 1 should be some multiplier
-
-
-
-            YdistHighGoal = highGoalYCoordinate - YCoordinate;
-            XdistHighGoal = highGoalXCoordinate - XCoordinate;
-
-            targetShooterHeading = -1 * Math.toDegrees(Math.atan(XdistHighGoal/YdistHighGoal));
-
-
-
-
-
-
-
+            LFPos = frontLeft.getCurrentPosition();
+            LBPos = backLeft.getCurrentPosition();
+            RFPos = frontRight.getCurrentPosition();
+            RBPos = backRight.getCurrentPosition();
 
 
             // multipliers for power
+            intakePower = 1.6 * flywheelPower;
             DrivePwrMulTrigger = 1.0 - (gamepad1.right_trigger);
             DrivePwrMulTriggerFast = 0.5 + (gamepad1.left_trigger * 1/2);
 
@@ -362,7 +265,6 @@ public class OdoTeleop extends LinearOpMode {
             double x = gamepad1.left_stick_x * sensMult;
             double rx = gamepad1.right_stick_x * 1.2;
 
-           // if ((Math.abs(x) > 0) && (Math.abs(y)< 0.2)) y = 0.2;
 
             // calculate motor powers
             LFPower = (y + x + rx);
@@ -387,6 +289,104 @@ public class OdoTeleop extends LinearOpMode {
                 RBPower /= max;
             }
 
+            // check for flip
+            if ((LFPos - oldLFPos > 0) && (LFPower < 0)) {
+                if (LFPower == 0) {
+
+                }
+                else {
+                    LFDrivePwrMul = Math.abs(maxSwitchPwr / LFPower);
+                    telemetry.addData("LF flipped ", 0);
+                }
+            }
+
+            if ((LFPos - oldLFPos < 0) && (LFPower > 0)) {
+                if (LFPower == 0){
+
+                }
+                else {
+                    LFDrivePwrMul = Math.abs(maxSwitchPwr / LFPower);
+
+                    telemetry.addData("LF flipped ", 0);
+                }
+            }
+
+            if ((LBPos - oldLBPos > 0) && (LBPower < 0)) {
+                if (LBPower == 0 ){
+
+                }
+                else {
+                    LBDrivePwrMul = Math.abs(maxSwitchPwr / LBPower);
+
+
+                    telemetry.addData("LB flipped ", 0);
+                }
+            }
+
+            if ((LBPos - oldLBPos < 0) && (LBPower > 0)) {
+                if (LBPower == 0 ){
+
+                }
+                else {
+                    LBDrivePwrMul = Math.abs(maxSwitchPwr / LBPower);
+
+                    telemetry.addData("LB flipped ", 0);
+                }
+            }
+
+
+            if ((RFPos - oldRFPos > 0) && (RFPower < 0)) {
+                if (RFPower == 0){
+
+                }
+                else {
+                    RFDrivePwrMul = Math.abs(maxSwitchPwr / RFPower);
+                    telemetry.addData("RF flipped ", 0);
+                }
+            }
+
+            if ((RFPos - oldRFPos < 0) && (RFPower > 0)) {
+                if (RFPower == 0){
+
+                }
+                else {
+                    RFDrivePwrMul = Math.abs(maxSwitchPwr / RFPower);
+                    telemetry.addData("RF flipped ", 0);
+                }
+            }
+
+            if ((RBPos - oldRBPos > 0) && (RBPower < 0)) {
+                if (RBPower == 0){
+
+                }
+                else {
+                    RBDrivePwrMul = Math.abs(maxSwitchPwr / RBPower);
+
+
+                    telemetry.addData("RB flipped ", 0);
+                }
+            }
+
+            if ((RBPos - oldRBPos < 0) && (RBPower > 0)) {
+                if (RBPower == 0){
+
+                }
+                else {
+                    RBDrivePwrMul = Math.abs(maxSwitchPwr / RBPower);
+
+                    telemetry.addData("RB flipped ", 0);
+                }
+            }
+
+            // calculate multiplier
+            if (LBDrivePwrMul > 1) LBDrivePwrMul =1;
+            if (LFDrivePwrMul > 1) LFDrivePwrMul =1;
+            if (RBDrivePwrMul > 1) RBDrivePwrMul =1;
+            if (RFDrivePwrMul > 1) RFDrivePwrMul =1;
+
+            DrivePwrMul = Math.min(LBDrivePwrMul , LFDrivePwrMul);
+            DrivePwrMul = Math.min(DrivePwrMul, RBDrivePwrMul);
+            DrivePwrMul = Math.min(DrivePwrMul, RFDrivePwrMul);
 
             // set power calc
             LFPower = LFPower * DrivePwrMul * DrivePwrMulTrigger * DrivePwrMulTriggerFast;
@@ -394,10 +394,6 @@ public class OdoTeleop extends LinearOpMode {
             RFPower = RFPower * DrivePwrMul * DrivePwrMulTrigger * DrivePwrMulTriggerFast;
             RBPower = RBPower * DrivePwrMul * DrivePwrMulTrigger * DrivePwrMulTriggerFast;
 
-
-                //rotate(90, 0.3);
-
-            //stop();
 
 
             // arm power override
@@ -432,7 +428,41 @@ public class OdoTeleop extends LinearOpMode {
 
             // shoot
             if (gamepad1.dpad_up == true) {
-                rotate(targetShooterHeading-Heading,0.4);
+                boolean aligned = false;
+                while (!aligned) {
+                    telemetry.addData("R1P1 = ", pipeline.getR1TopLeft());
+                    telemetry.addData("R1P2 = ", pipeline.getR1BottomRight());
+                    telemetry.addData("R2P1 = ", pipeline.getR2TopLeft());
+                    telemetry.addData("R2P2 = ", pipeline.getR2BottomRight());
+                    telemetry.update();
+                    double Dx1 = 160 - pipeline.R1BottomRight.x;
+                    double Dx2 = pipeline.R2TopLeft.x - 160;
+                    if ((Math.abs(Dx1 - Dx2)) < 10) {
+                        aligned = true;
+                        frontRight.setPower(0);
+                        backRight.setPower(0);
+                        frontLeft.setPower(0);
+                        backLeft.setPower(0);
+                    }
+                    else if ((Dx2 - Dx1) > 0){
+                        frontRight.setPower(-1 * 0.15);
+                        backRight.setPower(-1 * 0.15);
+                        frontLeft.setPower(0.15);
+                        backLeft.setPower(0.15);
+
+
+                    }
+                    else {
+                        frontRight.setPower(0.15);
+                        backRight.setPower(0.15);
+                        frontLeft.setPower(-1 * 0.15);
+                        backLeft.setPower(-1 * 0.15);
+
+                    }
+                    sleep(10);
+                }
+
+
 
                 shoot3times(flywheelPower);
             }
@@ -525,35 +555,14 @@ public class OdoTeleop extends LinearOpMode {
 
             }
             // take old pos reading
-
-            fwdOdoLeftOldPos = fwdOdoLeftPos;
-            fwdOdoRightOldPos = fwdOdoRightPos;
-            sideOdoOldPos = sideOdoPos;
-
-            //telemetry.addData("Target RPM = ", targetRPMGoal);
-            telemetry.addData("Odo Y coord = ", YCoordinate);
-            telemetry.addData("ODO x coord = ", XCoordinate);
-            //telemetry.addData("delta left y odo", fwdOdoLeftDelta);
-            //telemetry.addData("delta right y odo", fwdOdoRightDelta);
-            //telemetry.addData("y deltas = ", fwdOdoRightPos-fwdOdoLeftPos);
-
-           // telemetry.addData("fwdOdoLeftPos = ", fwdOdoLeftPos);
-          //  telemetry.addData("fwdOdoRightPos = ", fwdOdoRightPos);
-            telemetry.addData("heading", Heading);
-            //telemetry.addData("raw imu = ", getAngle());
-            telemetry.addData("target shoot heading = ", targetShooterHeading);
-            //telemetry.addData("side Odo Pos", sideOdoPos);
-            //telemetry.addData("x inches =", sideOdoPos/COUNTS_PER_INCH_ODO);
-            //telemetry.addData("Left Y Inches = ", fwdOdoLeftPos/COUNTS_PER_INCH_ODO);
-            //telemetry.addData("Right Y Inches = ", fwdOdoRightPos/COUNTS_PER_INCH_ODO);
-            //telemetry.addData("sin mult = ", Math.sin(Math.toRadians(thetaY)));
-            //telemetry.addData("joystick y = ", y);
-            //telemetry.addData("joystick x = ", x);
-            //telemetry.addData("joystick turn", rx);
-            //telemetry.addData("y delta = ", deltaY);
-
-
-
+            oldLFPos = LFPos;
+            oldLBPos = LBPos;
+            oldRFPos = RFPos;
+            oldRBPos = RBPos;
+            telemetry.addData("Target RPM = ", targetRPMGoal);
+            //   telemetry.addData("Mult = ", calibMult);
+            //telemetry.addData("First Shot = ", firstGoalShot);
+            //telemetry.addData("power flip = ",LFflip);
 
 
 
@@ -564,68 +573,6 @@ public class OdoTeleop extends LinearOpMode {
 
 
     }
-
-    public void rotate (double degrees, double power){
-        double initYLeft = intakeBottom.getCurrentPosition();
-        double initYRight = intakeTop.getCurrentPosition();
-        double targetRotationCt = degrees * COUNTS_PER_DEGREE_ODO;
-        boolean done = false;
-        double powerMult = 1;
-        double kp = 1;
-        double deltaRot =0;
-        //degrees += 5;
-
-        while (!done) {
-
-
-            double curYLeft = intakeBottom.getCurrentPosition() - initYLeft;
-            double curYRight = intakeTop.getCurrentPosition() - initYRight;
-
-            double curRot = (curYRight - curYLeft);
-            deltaRot = (Math.abs(targetRotationCt - curRot))/COUNTS_PER_DEGREE_ODO;
-
-            if (deltaRot > 10) kp = 1;
-            else kp = deltaRot/10;
-
-            if (degrees > 0) {
-                done = (curRot >= targetRotationCt) || (deltaRot < 2);
-            }
-            else {
-                done = (curRot <= targetRotationCt) || (deltaRot < 2);
-                powerMult = -1.0;
-            }
-            telemetry.addData("target rotation Ct", targetRotationCt);
-            telemetry.addData("cur rotation", curRot);
-            telemetry.addData("delta rot = ", deltaRot);
-            telemetry.update();
-
-
-            if (!done){
-                frontRight.setPower(-1 * power * powerMult * kp);
-                backRight.setPower(-1 * power * powerMult * kp);
-                frontLeft.setPower(power * powerMult * kp);
-                backLeft.setPower(power * powerMult * kp);
-            }
-
-            telemetry.addData("target rotation Ct", targetRotationCt);
-            telemetry.addData("cur rotation", curRot);
-            telemetry.addData("delta rot = ", deltaRot);
-            telemetry.update();
-
-        }
-
-        frontRight.setPower(0);
-        backRight.setPower(0);
-        frontLeft.setPower(0);
-        backLeft.setPower(0);
-
-
-
-
-
-    }
-
-
 
     public double getRPMIntake(double waitTime) {
         ElapsedTime timer = new ElapsedTime();
@@ -1115,8 +1062,6 @@ public class OdoTeleop extends LinearOpMode {
 
     }
 
-    
-
     public void ArmEncoders(double speed, double distance, int timeoutInMilliseconds) {
         int newArmTarget;
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -1176,46 +1121,60 @@ public class OdoTeleop extends LinearOpMode {
 
     }
 
-    private void resetAngle()
-    {
-        lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+    public void rotate (double degrees, double power){
+        double initYLeft = intakeBottom.getCurrentPosition();
+        double initYRight = intakeTop.getCurrentPosition();
+        double targetRotationCt = degrees * COUNTS_PER_DEGREE_ODO;
+        boolean done = false;
+        double powerMult = 1;
+        double kp = 1;
+        double deltaRot =0;
+        //degrees += 5;
 
-        globalAngle = 0;
-    }
-    public double getAngle()
-    {
-        // We experimentally determined the Z axis is the axis we want to use for heading angle.
-        // We have to process the angle because the imu works in euler angles so the Z axis is
-        // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
-        // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
-
-        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-
-        double deltaFirstAngle = angles.firstAngle - lastAngles.firstAngle;
+        while (!done) {
 
 
+            double curYLeft = intakeBottom.getCurrentPosition() - initYLeft;
+            double curYRight = intakeTop.getCurrentPosition() - initYRight;
+
+            double curRot = (curYRight - curYLeft);
+            deltaRot = (Math.abs(targetRotationCt - curRot))/COUNTS_PER_DEGREE_ODO;
+
+            if (deltaRot > 10) kp = 1;
+            else kp = deltaRot/10;
+
+            if (degrees > 0) {
+                done = (curRot >= targetRotationCt) || (deltaRot < 2);
+            }
+            else {
+                done = (curRot <= targetRotationCt) || (deltaRot < 2);
+                powerMult = -1.0;
+            }
+            telemetry.addData("target rotation Ct", targetRotationCt);
+            telemetry.addData("cur rotation", curRot);
+            telemetry.addData("delta rot = ", deltaRot);
+            telemetry.update();
 
 
-        if (deltaFirstAngle < -180)
-            deltaFirstAngle += 360;
-        else if (deltaFirstAngle > 180)
-            deltaFirstAngle -= 360;
+            if (!done){
+                frontRight.setPower(-1 * power * powerMult * kp);
+                backRight.setPower(-1 * power * powerMult * kp);
+                frontLeft.setPower(power * powerMult * kp);
+                backLeft.setPower(power * powerMult * kp);
+            }
 
-        globalAngle += (deltaFirstAngle * (360/362.2));
+            telemetry.addData("target rotation Ct", targetRotationCt);
+            telemetry.addData("cur rotation", curRot);
+            telemetry.addData("delta rot = ", deltaRot);
+            telemetry.update();
 
-        //globalAngle = angles.firstAngle;
+        }
 
-        lastAngles = angles;
+        frontRight.setPower(0);
+        backRight.setPower(0);
+        frontLeft.setPower(0);
+        backLeft.setPower(0);
 
-        //telemetry.addData("First Angle = ", angles.firstAngle);
-        //telemetry.addData("Second Angle = ", angles.secondAngle);
-        //telemetry.addData("Third Angle = ", angles.thirdAngle);
-        //telemetry.update();
-
-
-
-
-        return globalAngle;
 
 
 
@@ -1226,3 +1185,4 @@ public class OdoTeleop extends LinearOpMode {
 
 
 }
+

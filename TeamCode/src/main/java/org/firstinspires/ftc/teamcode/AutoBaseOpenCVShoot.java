@@ -42,10 +42,10 @@ import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.List;
 
-@Autonomous(name="Auto Ultimate Goal Base OpenCV", group="PiRhos")
+@Autonomous(name=" Ultimate Goal Base OpenCV", group="PiRhos")
 //@Disabled
 @Disabled
-public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
+public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
 
     /* Declare OpMode members. */
     protected DcMotor frontLeft, frontRight, backLeft, backRight, flywheelShooter, armMotor, intakeTop, intakeBottom;
@@ -86,7 +86,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     //OpenCV related initalization
     OpenCvInternalCamera webcam;
     StarterStackDeterminationPipeline old_pipeline;
-    OpenCVTestPipelineComp2 pipeline;
+    OpenCVPipelineShoot pipeline;
 
     //Rotation related
     BNO055IMU               imu;
@@ -97,7 +97,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
     Orientation angles;
     Acceleration gravity;
 
-    protected void initHardware( boolean fOpenCVLeft ) {
+    protected void initHardware() {
 
         frontLeft = hardwareMap.get(DcMotor.class, "left_front");
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -156,8 +156,8 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
-        old_pipeline = new StarterStackDeterminationPipeline( fOpenCVLeft );
-        pipeline = new OpenCVTestPipelineComp2( fOpenCVLeft );
+        old_pipeline = new StarterStackDeterminationPipeline(true);
+        pipeline = new OpenCVPipelineShoot();
         webcam.setPipeline(pipeline);
 
         // We set the viewport policy to optimized view so the preview doesn't appear 90 deg
@@ -167,16 +167,16 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
-           @Override
-           public void onOpened()
-           {
-               webcam.startStreaming(320,240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+            @Override
+            public void onOpened()
+            {
+                webcam.startStreaming(320,240, OpenCvCameraRotation.SIDEWAYS_LEFT);
             }
         });
 
         telemetry.addData("Status", "Initialization Done");
-        telemetry.addData("num rows =", pipeline.NumRows());
-        telemetry.addData("num columns =", pipeline.NumColumns());
+        //telemetry.addData("num rows =", pipeline.NumRows());
+        //telemetry.addData("num columns =", pipeline.NumColumns());
 
         telemetry.update();
         sleep(2000);
@@ -274,10 +274,10 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
 
     public void shooterTrigger (){
-            flywheelServo.setPosition(0.5);
-            sleep(500);
-            flywheelServo.setPosition(1);
-            //sleep(0) ;
+        flywheelServo.setPosition(0.5);
+        sleep(500);
+        flywheelServo.setPosition(1);
+        //sleep(0) ;
 
     }
     public double SetRPMWobbleGoal (double targetRPM, double motorPower){
@@ -867,9 +867,9 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     }
 
-    protected OpenCVTestPipelineComp2.RingPosition OpenCVRecognizeStack(double milliseconds ) {
+    protected OpenCVPipelineShoot.RingPosition OpenCVRecognizeStack(double milliseconds ) {
         ElapsedTime runtime = new ElapsedTime();
-        OpenCVTestPipelineComp2.RingPosition stackHeight = OpenCVTestPipelineComp2.RingPosition.NONE;
+        OpenCVPipelineShoot.RingPosition stackHeight = OpenCVPipelineShoot.RingPosition.NONE;
 
         while (opModeIsActive() && runtime.milliseconds() < milliseconds)
         {
@@ -877,7 +877,7 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
             telemetry.addData("Ratio", pipeline.ratio);
             telemetry.update();
             stackHeight = pipeline.getAnalysis();
-            if (!stackHeight.equals(OpenCVTestPipeline.RingPosition.NONE))
+            if (!stackHeight.equals(OpenCVPipelineShoot.RingPosition.NONE))
                 break;
 
             // Don't burn CPU cycles busy-looping in this sample
@@ -987,15 +987,15 @@ public abstract class UltimateGoalAutonomousBaseOpenCV extends LinearOpMode {
 
     protected void CommonMethodForArm() {
 
-            ArmEncodersNew(1, 1350, 10000);
-            sleep(250);
-            armServo.setPosition(0);
-            moveWPID(8, 0,0.75);
-            ArmEncodersNew(1, -1350, 10000);
-            armServo.setPosition(1);
+        ArmEncodersNew(1, 1350, 10000);
+        sleep(250);
+        armServo.setPosition(0);
+        moveWPID(8, 0,0.75);
+        ArmEncodersNew(1, -1350, 10000);
+        armServo.setPosition(1);
 
 
-        }
+    }
     public void shooterTrigger3x (){
         double flywheelPower = 0.47;
 

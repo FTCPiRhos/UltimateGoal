@@ -109,11 +109,11 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
 
     private AutoRedLeftNewDrive.MoveWPIDVars moveWPIDVars = new AutoRedLeftNewDrive.MoveWPIDVars();
     // target shooter speed
-    double targetRPMGoal = -165;
+    double targetRPMGoal = -171;
     double flywheelPower = 0.6;
     double commandCount = 0;
     boolean part1 = true;
-    double drivePwrStandard = 0.5;
+    double drivePwrStandard = 0.4;
     double rightBlockerRestPos = 0.62;
     double leftBlockerRestPos = 0.935;
     double rightBlockerBlockingPos = 1;
@@ -134,6 +134,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
 
         // Find number of rings + print for drivers
         OpenCVTestPipeline.RingPosition objectFound = OpenCVRecognizeStack(1000);
+
         telemetry.addData("Object Found: ", objectFound);
         telemetry.update();
 
@@ -146,8 +147,11 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
             if (commandCount == 0) {
 
                 // forward and left to avoid ring stack
-                moveWPIDnew(5, -66, 0.5);
-                if (!moveWPIDVars.inMove) commandCount++;
+                moveWPIDnew(5, -75, 0.35);
+                if (!moveWPIDVars.inMove){
+                    commandCount++;
+                    sleep(250);
+                }
 
             }
 
@@ -161,8 +165,9 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
 
 
                 }
+
                 // strafe right to align to goal
-                moveWPIDnew(-30, 0, 0.5);
+                moveWPIDnew(-30, 0, 0.35);
                 if (!moveWPIDVars.inMove) {
                     //rotate(2, .25);
 
@@ -172,7 +177,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
             }
 
 
-            if ((commandCount == 2) && (loopCount > 50)) {
+            if ((commandCount == 2) && (loopCount > 70)) {
                 //if (shooterRPMVars.atTarget == true) {
                         // shoot 3 rings
                 if (prevCommandCount != commandCount) {
@@ -198,11 +203,11 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
                 if (commandCount == 3) {
 
                     // turn clockwise 90
-                    rotate(90, .5);
+                    rotateOdo(90, .3);
 
 
                     // move forward and left to drop off goal
-                    moveWPID(28, -11, 0.6);
+                    moveWPID(20, -11, 0.40);
 
 
                     // arm down
@@ -212,15 +217,15 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
                     armServo.setPosition(0);
 
 
-
+                    sleep(250);
                     // move right and back to avoid goal
-                    moveWPID(13, 9, 0.4);
+                    moveWPID(13, 12, 0.3);
                     //moveWPID(0,2,0.5);
 
 
 
                     // strafe right to pick up wobble goal
-                    moveWPID(-109, 0, 0.6);
+                    moveWPID(-114, 0, 0.6);
                     //moveWPID(0,-5,0.4);
 
 
@@ -231,7 +236,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
 
 
                     // strafe left and forward to frop of goal # 2
-                    moveWPID(98, -17, 0.6);
+                    moveWPID(103, -12, 0.6);
 
 
 
@@ -251,7 +256,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
 
 
                     // park
-                    moveWPID(-3, 5, 0.4);
+                    moveWPID(-3, 15, 0.4);
 
                     sleep(500);
                     stop();
@@ -263,7 +268,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
                 if (commandCount == 3) {
                     // move right and forward to drop goal
                     moveWPID(-14, 0, drivePwrStandard);
-                    moveWPID(0, -18, drivePwrStandard);
+                    moveWPID(0, -24, drivePwrStandard);
 
                     // arm down
 
@@ -280,7 +285,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
                     intakeOnFast();
 
                     // move back to pick up ring
-                    moveWPID(0, 34, drivePwrStandard);
+                    moveWPID(0, 44, drivePwrStandard);
                     sleep(2000);
 
 
@@ -295,12 +300,12 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
                     flywheelShooter.setPower(0);
 
                     // turn clockwise
-                    rotate(84, .75);
+                    rotateOdo(82, .4);
 
 
                     // move forward then strafe right to pick up goal # 2
-                    moveWPID(0,-6,0.3);
-                    moveWPID(-54, 0, drivePwrStandard);
+                    //moveWPID(0,2,0.3);
+                    moveWPID(-63, 0, drivePwrStandard);
                     // close claw
                     armServo.setPosition(1);
                     sleep(1000);
@@ -308,9 +313,9 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
                     ArmEncodersNew(1.0,-1350,1000);
                     sleep(1000);
                     // move back
-                    moveWPID(0, 12, drivePwrStandard);
+                    moveWPID(0, 8, drivePwrStandard);
                     // strafe right to drop
-                    moveWPID(138, 0, 0.75);
+                    moveWPID(146, 0, 0.7);
                     // arm down
                     ArmEncodersNew(1.0,1350,1000);
                     sleep(250);
@@ -324,7 +329,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
                     // claw closed
                     armServo.setPosition(1);
                     // strafe to park
-                    moveWPID(-36, 0, drivePwrStandard);
+                    moveWPID(-38, 0, drivePwrStandard);
 
                     stop();
                 }
@@ -336,13 +341,13 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
                     // set shooter power
                     flywheelShooter.setPower(flywheelPower * 1.035);
                     // strafe left
-                    moveWPID(10, 0, 0.5);
+                    moveWPID(10, 0, 0.4);
 
                     // move back to knock down stack
                     moveWPID(0, 15, 0.35);
 
                     // move forward
-                    moveWPID(0, -5, 0.75);
+                    moveWPID(0, -5, 0.4);
 
                     // intake on to pickup
                     intakeOnFast();
@@ -352,9 +357,9 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
 
 
                     // move forward
-                    moveWPID(0, -6, 0.75);
+                    moveWPID(0, -6, 0.4);
                     // strafe right to shoot
-                    moveWPID(-6, 0, 0.75);
+                    moveWPID(-6, 0, 0.4);
 
 
 
@@ -383,7 +388,7 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
                     moveWPID(0, 12, 0.35);
                     sleep(1000);
                     // move forward to shoot
-                    moveWPID(0, -20, 0.75);
+                    moveWPID(0, -20, 0.4);
 
                     sleep(250);
                     // shoot 2 rings
@@ -402,21 +407,21 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
                     flywheelShooter.setPower(0);
 
                     // rotate clockwise
-                    rotate(85, 0.75);
+                    rotateOdo(82.5, 0.4);
                     // forwards and strafe right to drop off wobble goal
-                    moveWPID(80, -12, 1.0);
+                    moveWPID(115, -12, 0.6);
                     // arm down
                     ArmEncodersNew(1, 1350, 10000);
                     sleep(250);
                     // claw open
                     armServo.setPosition(0);
                     // strafe left to avoid goal
-                    moveWPID(8, 0,0.75);
+                    moveWPID(8, 0,0.4);
                     // arm up
                     ArmEncodersNew(1, -1350, 10000);
                     // move back and strafe right to park
-                    moveWPID(0, 14, 1.0);
-                    moveWPID(-73,0,1.0);
+                    moveWPID(0, 14, 0.4);
+                    moveWPID(-75,0,0.5);
                     stop();
 
 
@@ -426,17 +431,17 @@ public class AutoRedLeftNewDrive extends UltimateGoalAutonomousBaseOpenCV {
                     //rotate(-2, 1.0);
                     // end of park
                     moveWPID(0,-12,1);
-                    moveWPID(-160,0,1.0);
+                    moveWPID(-160,0,0.4);
 
                     // close servo
                     armServo.setPosition(1);
                     sleep(1000);
-                    moveWPID(172,0,1.0);
+                    moveWPID(172,0,0.4);
                     armServo.setPosition(0);
                     sleep(350);
                     moveWPID(14, 0, drivePwrStandard);
                     ArmEncodersNew(1.0,-1350,1000);
-                    moveWPID(-60, 8, 1.0);
+                    moveWPID(-60, 8, 0.4);
 
 
 
