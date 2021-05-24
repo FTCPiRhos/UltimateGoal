@@ -42,10 +42,15 @@ import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.List;
 
-@Autonomous(name=" Ultimate Goal Base OpenCV", group="PiRhos")
+import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE;
+import static org.firstinspires.ftc.teamcode.OpenCVPipelineShoot.StartRobotPosition.LEFT;
+import static org.firstinspires.ftc.teamcode.OpenCVPipelineShoot.StartRobotPosition.RIGHT;
+import static org.firstinspires.ftc.teamcode.OpenCVPipelineShoot.StartRobotPosition.UNKNOWN;
+
+@Autonomous(name=" Ultimate Goal Base region", group="PiRhos")
 //@Disabled
 @Disabled
-public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
+public abstract class AutoBaseRegional extends LinearOpMode {
 
     /* Declare OpMode members. */
     protected DcMotor frontLeft, frontRight, backLeft, backRight, flywheelShooter, armMotor, intakeTop, intakeBottom;
@@ -67,7 +72,7 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
     static final double DRIVE_GEAR_REDUCTION = 2.0 / 4.0;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 3.937;   // For figuring circumference - 100mm
     static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
-            (WHEEL_DIAMETER_INCHES * 3.1415);
+            (WHEEL_DIAMETER_INCHES * 3.1415) * 2;
     static final double YTargetMul = 1.23;
     static final double XTargetMul = 1.7;
 
@@ -97,7 +102,7 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
     Orientation angles;
     Acceleration gravity;
 
-    protected void initHardware() {
+    protected void initHardware(boolean red) {
 
         frontLeft = hardwareMap.get(DcMotor.class, "left_front");
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -109,6 +114,9 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
         armServo = hardwareMap.get(Servo.class,"arm_servo");
         ringBlockerLeft = hardwareMap.get(Servo.class,"right_blocker");
         ringBlockerRight = hardwareMap.get(Servo.class,"left_blocker");
+
+
+
 
         intakeTop = hardwareMap.get(DcMotor.class,"intake2");
         intakeBottom = hardwareMap.get(DcMotor.class,"intake1");
@@ -130,6 +138,11 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
         armServo.setDirection(Servo.Direction.FORWARD);
         ringBlockerLeft.setDirection(Servo.Direction.FORWARD);
         ringBlockerRight.setDirection(Servo.Direction.FORWARD);
+
+        frontLeft.setZeroPowerBehavior(BRAKE);
+        backLeft.setZeroPowerBehavior(BRAKE);
+        frontRight.setZeroPowerBehavior(BRAKE);
+        backRight.setZeroPowerBehavior(BRAKE);
 
         flywheelShooter = hardwareMap.get(DcMotor.class, "flywheel_shooter");
         flywheelShooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -157,7 +170,7 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createInternalCamera(OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
         old_pipeline = new StarterStackDeterminationPipeline(true);
-        pipeline = new OpenCVPipelineShoot(true);
+        pipeline = new OpenCVPipelineShoot(red);
         webcam.setPipeline(pipeline);
 
         // We set the viewport policy to optimized view so the preview doesn't appear 90 deg
@@ -253,11 +266,14 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
             flywheelShooter.setPower(curPower);
             double RPM = getRPM(time_step);
             errorRPM = targetRPM + RPM;
+            /*
             telemetry.addData("RPM = ", RPM);
             telemetry.addData("errorRPM = ", errorRPM);
             telemetry.addData("curPower  = ", curPower);
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
+
+             */
 
             if (Math.abs(errorRPM) <  2 ){
                 inLockCount += 1 ;
@@ -307,11 +323,14 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
             flywheelShooter.setPower(curPower);
             double RPM = getRPM(50);
             errorRPM = targetRPM + RPM;
+            /*
             telemetry.addData("RPM = ", RPM);
             telemetry.addData("errorRPM = ", errorRPM);
             telemetry.addData("curPower  = ", curPower);
             telemetry.addData("deltaPower  = ", deltaPower);
             telemetry.update();
+
+             */
 
             if (Math.abs(errorRPM) < 1) {
                 return (curPower);
@@ -483,13 +502,15 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
             lastXError = errorX;
             lastYError = errorY;
 
-
+/*
             telemetry.addData("error y = ", errorY);
             telemetry.addData("error x = ", errorX);
 
             telemetry.addData("use pwr x = " , usePwrX);
             telemetry.addData("use pwr y = " , usePwrY);
             telemetry.update();
+
+ */
 
 
         }
@@ -885,6 +906,21 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
         }
         return stackHeight;
     }
+
+    protected OpenCVPipelineShoot.StartRobotPosition OpenCVStartPos(double milliseconds){
+        ElapsedTime runtime = new ElapsedTime();
+        OpenCVPipelineShoot.StartRobotPosition initPos = LEFT;
+        while ((opModeIsActive() && runtime.milliseconds() < milliseconds)){
+            telemetry.addData("Analysis", pipeline.getInitRobotPos());
+            telemetry.update();
+
+            initPos = pipeline.getInitRobotPos();
+
+            sleep(50);
+        }
+
+        return initPos;
+    }
     protected void ArmEncoders(double speed, double distance, int timeoutInMilliseconds) {
         int newArmTarget;
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -914,10 +950,10 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
                     (armMotor.isBusy())) {
 
                 // Display it for the driver.
-                telemetry.addData("Path1", "Running to %7d", newArmTarget);
-                telemetry.addData("Path2", "Running at %7d", armMotor.getCurrentPosition());
+               // telemetry.addData("Path1", "Running to %7d", newArmTarget);
+              //  telemetry.addData("Path2", "Running at %7d", armMotor.getCurrentPosition());
 
-                telemetry.update();
+             //   telemetry.update();
             }
 
             // Stop all motion;
@@ -966,10 +1002,10 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
                         (armMotor.getCurrentPosition() <-1000  && (speed < -0.10)) ? -0.1 : speed ;
 
                 // Display it for the driver.
-                telemetry.addData("Path1", "Running to %7d", newArmTarget);
-                telemetry.addData("Path2", "Running at %7d", armMotor.getCurrentPosition());
+               // telemetry.addData("Path1", "Running to %7d", newArmTarget);
+               // telemetry.addData("Path2", "Running at %7d", armMotor.getCurrentPosition());
 
-                telemetry.update();
+               // telemetry.update();
             }
 
             // Stop all motion;
@@ -1085,10 +1121,14 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
                 done = (curRot <= targetRotationCt) || (deltaRot < 2);
                 powerMult = -1.0;
             }
+            /*
             telemetry.addData("target rotation Ct", targetRotationCt);
             telemetry.addData("cur rotation", curRot);
             telemetry.addData("delta rot = ", deltaRot);
+            telemetry.addData("degrees : ", degrees);
             telemetry.update();
+
+             */
 
 
             if (!done){
@@ -1097,11 +1137,15 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
                 frontLeft.setPower(power * powerMult * kp);
                 backLeft.setPower(power * powerMult * kp);
             }
-
+/*
             telemetry.addData("target rotation Ct", targetRotationCt);
             telemetry.addData("cur rotation", curRot);
             telemetry.addData("delta rot = ", deltaRot);
+            telemetry.addData("degrees : ", degrees);
+
             telemetry.update();
+
+ */
 
         }
 
@@ -1216,7 +1260,6 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
         flywheelServo.setPosition(0.5);
         sleep(500);
         flywheelServo.setPosition(1);
-        flywheelShooter.setPower(0);
         //sleep(0) ;
     }
     public double shooterTrigger1xR (double targetRPM){
@@ -1304,30 +1347,66 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
     }
     public double shooterTrigger3xNPnew (double flywheelPower){
 
+
         for (int i = 0; i < 3; i += 1) {
-
-
             flywheelServo.setPosition(1);
-            sleep(350);
-            intakeBottom.setPower(intakeBottomShooterPwr);
-            if (i == 0 ) {
-                flywheelShooter.setPower(flywheelPower * 1.1);
-            }
-            if (i == 1 ){
-                flywheelShooter.setPower((flywheelPower * 1.1));
-            }
+            if (i == 0) flywheelPower = flywheelPower * 1.2;
+            if ( i == 1)  flywheelPower = flywheelPower * 1.25;
+            flywheelShooter.setPower(flywheelPower);
+
+            sleep(450);
             flywheelServo.setPosition(0.6);
-            sleep(350);
-            intakeBottom.setPower(0);
+            sleep(450);
+
 
         }
-        sleep(500) ;
 
-        flywheelShooter.setPower(0);
+        flywheelShooter.setPower(flywheelPower);
+        return  flywheelPower;
+        // flywheelShooter.setPower(0);
+    }
 
-        return flywheelPower;
+    public void shoot3times (double flywheelPower){
+        int loopCount = 22;
+            SetRPMCounted(-167,flywheelPower,loopCount);
+
+
+        for (int i = 0; i < 3; i += 1) {
+            flywheelServo.setPosition(1);
+                flywheelPower = SetRPMCounted(-167,flywheelPower, loopCount);
+                //sleep(10);
+
+            flywheelServo.setPosition(0.6);
+                flywheelPower = SetRPMCounted(-167,flywheelPower,loopCount);
+                //  sleep(10);
+
+
+        }
+
 
     }
+
+    public void shoot2times (double flywheelPower){
+        int loopCount = 22;
+        SetRPMCounted(-167,flywheelPower,loopCount);
+
+
+        for (int i = 0; i < 2; i += 1) {
+            flywheelServo.setPosition(1);
+            flywheelPower = SetRPMCounted(-167,flywheelPower, loopCount);
+            //sleep(10);
+
+            flywheelServo.setPosition(0.6);
+            flywheelPower = SetRPMCounted(-167,flywheelPower,loopCount);
+            //  sleep(10);
+
+
+        }
+
+
+    }
+
+
 
 
     public double shooterTrigger3xNP (){
@@ -1354,7 +1433,6 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
         }
         sleep(500) ;
 
-        flywheelShooter.setPower(0);
 
         return flywheelPower;
 
@@ -1381,7 +1459,282 @@ public abstract class AutoBaseOpenCVShoot extends LinearOpMode {
 
     }
 
+    public OpenCVPipelineShoot.StartRobotPosition aimShoot(double targetRPMGoal, double flywheelPower, boolean updateColor) {
+        boolean aligned = false;
+        double BasePower = 0.0;
+        double power = 0.3;
+        double mult = 1;
+        double exitRange = 7.5;
+        double startError = 0;
+        boolean firstCt = true;
+
+        double curFlywheelPower = flywheelPower;
+        OpenCVPipelineShoot.StartRobotPosition returnPos = UNKNOWN;
+        if (!updateColor) firstCt = false;
+        while (!aligned) {
+            double Dx1 = 160 - pipeline.R1BottomRight.x;
+            double Dx2 = pipeline.R2TopLeft.x - 160;
+
+
+            boolean oneObject = (Math.abs(pipeline.R1BottomRight.x - pipeline.R2TopLeft.x) < 50);
+
+            if ((Math.abs(Dx1 - Dx2)) > 100) mult = 0.00;
+            else mult = (0.25 * (100 - (Math.abs(Dx1 - Dx2)))/100);
+
+            double turnPower = power - mult;
+
+            if (turnPower < 0.3) turnPower = 0.3;
+            if (startError == 0) startError = (Math.abs(Dx1 - Dx2));
+
+            if (startError < 20) turnPower = 0.15;
+
+
+            if (((Math.abs(Dx1 - Dx2)) < exitRange) && (oneObject == false)) {
+                if (firstCt){
+                   returnPos = LEFT;
+                }
+                aligned = true;
+                frontRight.setPower(0);
+                backRight.setPower(0);
+                frontLeft.setPower(0);
+                backLeft.setPower(0);
+            }
+            else if ((Dx2 - Dx1) > 0){
+                if (firstCt){
+                    returnPos = LEFT;
+                }
+                frontRight.setPower(-1 * BasePower - turnPower);
+                backRight.setPower(BasePower - turnPower);
+                frontLeft.setPower(-1 * BasePower + turnPower);
+                backLeft.setPower(BasePower + turnPower);
+            }
+            else {
+                if (firstCt){
+                    returnPos = RIGHT;
+                }
+                frontRight.setPower(-1 * BasePower + turnPower);
+                backRight.setPower(BasePower + turnPower);
+                frontLeft.setPower(-1 * BasePower - turnPower);
+                backLeft.setPower(BasePower - turnPower);
+
+            }
+
+            firstCt = false;
+            /*
+            telemetry.addData("pos : ",pipeline.getInitRobotPos() );
+            telemetry.addData("color :", pipeline.getColor());
+            telemetry.update();
+
+             */
+
+
+            sleep(15);
+
+            frontRight.setPower(0);
+            backRight.setPower(0);
+            frontLeft.setPower(0);
+            backLeft.setPower(0);
+            sleep(45);
+
+            exitRange += 2;
+            if (exitRange>20) exitRange = 20;
+        }
+
+
+                curFlywheelPower = SetRPMCounted(targetRPMGoal, curFlywheelPower,10);
+                sleep(10);
+
+
+
+        shoot3times(curFlywheelPower);
+
+        return returnPos;
+    }
+
+    public OpenCVPipelineShoot.StartRobotPosition aimShoot1x(double targetRPMGoal, double flywheelPower, boolean updateColor) {
+        boolean aligned = false;
+        double BasePower = 0.0;
+        double power = 0.3;
+        double mult = 1;
+        double exitRange = 10;
+        double startError = 0;
+        boolean firstCt = true;
+        double curFlywheelPower = flywheelPower;
+
+        OpenCVPipelineShoot.StartRobotPosition returnPos = UNKNOWN;
+        if (!updateColor) firstCt = false;
+        while (!aligned) {
+            double Dx1 = 160 - pipeline.R1BottomRight.x;
+            double Dx2 = pipeline.R2TopLeft.x - 160;
+
+            if ((Math.abs(Dx1 - Dx2)) > 100) mult = 0.00;
+            else mult = (0.25 * (100 - (Math.abs(Dx1 - Dx2)))/100);
+
+            double turnPower = power - mult;
+
+            if (turnPower < 0.3) turnPower = 0.3;
+            if (startError == 0) startError = (Math.abs(Dx1 - Dx2));
+
+            if (startError < 20) turnPower = 0.15;
+
+
+            if ((Math.abs(Dx1 - Dx2)) < exitRange) {
+                if (firstCt){
+                    returnPos = LEFT;
+                }
+                aligned = true;
+                frontRight.setPower(0);
+                backRight.setPower(0);
+                frontLeft.setPower(0);
+                backLeft.setPower(0);
+            }
+            else if ((Dx2 - Dx1) > 0){
+                if (firstCt){
+                    returnPos = LEFT;
+                }
+                frontRight.setPower(-1 * BasePower - turnPower);
+                backRight.setPower(BasePower - turnPower);
+                frontLeft.setPower(-1 * BasePower + turnPower);
+                backLeft.setPower(BasePower + turnPower);
+            }
+            else {
+                if (firstCt){
+                    returnPos = RIGHT;
+                }
+                frontRight.setPower(-1 * BasePower + turnPower);
+                backRight.setPower(BasePower + turnPower);
+                frontLeft.setPower(-1 * BasePower - turnPower);
+                backLeft.setPower(BasePower - turnPower);
+
+            }
+
+            firstCt = false;
+
+            /*
+            telemetry.addData("pos : ",pipeline.getInitRobotPos() );
+            telemetry.addData("color :", pipeline.getColor());
+            telemetry.update();
+
+             */
+
+
+            sleep(15);
+
+            frontRight.setPower(0);
+            backRight.setPower(0);
+            frontLeft.setPower(0);
+            backLeft.setPower(0);
+            sleep(45);
+
+            exitRange += 2;
+            if (exitRange>12) exitRange = 12;
+        }
+
+
+        curFlywheelPower = SetRPMCounted(targetRPMGoal, curFlywheelPower,25);
+        sleep(100);
+
+
+
+        // shoot
+        shoot2times(flywheelPower);
+
+        return returnPos;
+    }
+
+    public double SetRPMCounted (double targetRPM, double motorPower, double maxCount){
+
+        double time_step = 20.0 ;
+
+        double time_step_mul = time_step / 50.0 ;
+
+        double kp = 0.0025  * 1 ;
+        double ki = (0.0025/50.0) * 0.1 * 1 ;
+        double kd = 0.0005  * 1;
+
+        ElapsedTime timer = new ElapsedTime();
+        timer.reset();
+
+        double errorRPM = targetRPM + getRPM(time_step);
+        double curPower = motorPower;
+        double lastErr = 0 ;
+        double integralErr = 0 ;
+        int inLockCount = 0 ;
+        int loop_count = 0 ;
+        while (loop_count < 1000) {
+            loop_count++;
+            double deltaError = errorRPM - lastErr;
+            lastErr = errorRPM ;
+            double time_int = timer.time() ;
+            timer.reset();
+
+            double derivative =  deltaError/time_int ;
+
+
+            if (Math.abs(errorRPM) < 5 ) {
+                integralErr += errorRPM * time_int;
+            } else {
+                integralErr += 0 ;
+//                integralErr += ((errorRPM > 0) ? 5 * time_int : -5 * time_int) ;
+            }
+
+            double deltaPower = -1 * time_step_mul * ((errorRPM * kp) + (integralErr * ki) +(derivative * kd)) ;
+
+            /* double pwrMul = (Math.abs(errorRPM) > 20) ? 1.0 :
+                            (Math.abs(errorRPM) > 10)  ? 1.0/4.0 :
+                            (Math.abs(errorRPM) > 5)  ? 1.0/16.0 :
+                                    (Math.abs(errorRPM) > 2.5)  ? 01.0/64.0 : (1.0/128.0) ;
+
+             */
+            double pwrMul = 1.0;
+            curPower += (deltaPower * pwrMul) ;
+
+            if (curPower > 0.7) curPower = 0.7 ;
+            if (curPower < -0.7) curPower = -0.7 ;
+
+            flywheelShooter.setPower(curPower);
+            double RPM = getRPM(time_step);
+            errorRPM = targetRPM + RPM;
+            /*
+            telemetry.addData("RPM = ", RPM);
+            telemetry.addData("errorRPM = ", errorRPM);
+            telemetry.addData("curPower  = ", curPower);
+            telemetry.addData("deltaPower  = ", deltaPower);
+            telemetry.update();
+
+             */
+
+            if (Math.abs(errorRPM) <  2 ){
+                inLockCount += 1 ;
+                if (inLockCount > 10) {
+                    return curPower;
+                }
+            }
+            else {
+                inLockCount = 0 ;
+            }
+
+            if (loop_count > maxCount){
+                return (curPower);
+            }
+        }
+        return (curPower);
+    }
+
+    public void turnToZero(OpenCVPipelineShoot.StartRobotPosition position){
+        double deltaY = intakeTop.getCurrentPosition() - intakeBottom.getCurrentPosition();
+
+        double degrees = -1 * (deltaY)/COUNTS_PER_DEGREE_ODO;
+
+        rotateOdo(degrees,0.55);
+
+    }
+
+
+
 }
+
+
 
 
 

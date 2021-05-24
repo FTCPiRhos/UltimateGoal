@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name="Current Teleop (slower turn).", group="PiRhos")
-
+@Disabled
 
 
 
